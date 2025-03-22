@@ -15,7 +15,7 @@ import org.furranystudio.thefakeplayer.Thefakeplayer;
 
 public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityModel<EntityRenderState> {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
-	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "fakeplayermodelwithanim"), "main");
+	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "fakeplayermodel"), "main");
 	private final ModelPart body;
 	private final ModelPart head;
 	private final ModelPart torso;
