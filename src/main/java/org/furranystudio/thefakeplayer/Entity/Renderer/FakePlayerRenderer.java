@@ -11,9 +11,13 @@ import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.furranystudio.thefakeplayer.Thefakeplayer;
 import org.jetbrains.annotations.NotNull;
 
 public class FakePlayerRenderer extends HumanoidMobRenderer<FakePlayerEntity, HumanoidRenderState, HumanoidModel<HumanoidRenderState>> {
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png");
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
         super(p_174169_, new HumanoidModel<>(p_174169_.bakeLayer(FakePlayerModel.LAYER_LOCATION)), 0.5F);
@@ -21,7 +25,7 @@ public class FakePlayerRenderer extends HumanoidMobRenderer<FakePlayerEntity, Hu
 
     @Override
     public @NotNull ResourceLocation getTextureLocation(@NotNull HumanoidRenderState p_362468_) {
-        return ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
+        return TEXTURE;
     }
 
     @Override
