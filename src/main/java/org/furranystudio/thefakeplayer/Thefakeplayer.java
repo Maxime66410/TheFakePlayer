@@ -59,6 +59,8 @@ public class Thefakeplayer {
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        ModEntities.ENTITIES.register(modEventBus);
     }
 
     public static void registerCommands() {
