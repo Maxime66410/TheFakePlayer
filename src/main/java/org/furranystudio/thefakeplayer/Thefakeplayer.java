@@ -3,12 +3,17 @@ package org.furranystudio.thefakeplayer;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.logging.LogUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -23,6 +28,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -35,9 +42,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import org.furranystudio.thefakeplayer.Commands.FakePlayerCommands;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Entity.ModEntities;
 import org.slf4j.Logger;
+
+import javax.swing.text.AttributeSet;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Thefakeplayer.MODID)
@@ -63,28 +73,12 @@ public class Thefakeplayer {
         ModEntities.ENTITIES.register(modEventBus);
     }
 
-    public static void registerCommands() {
-        // Register commands
-        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
-        dispatcher.register(LiteralArgumentBuilder.<CommandSourceStack>literal("summon_fake_player")
-                .executes(context -> {
-                    CommandSourceStack source = context.getSource();
-                    ServerLevel world = source.getLevel();
-
-                    Player player = source.getPlayerOrException();
-                    FakePlayerEntity fakePlayer = new FakePlayerEntity(world, player.getX(), player.getY(), player.getZ());
-
-                    fakePlayer.setPos(player.getX(), player.getY(), player.getZ());
-
-                    world.addFreshEntity(fakePlayer);
-                    return 1;
-                }));
-    }
-
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
-        // Register commands
-        registerCommands();
+
+        event.enqueueWork(() -> {
+
+        });
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
@@ -100,6 +94,29 @@ public class Thefakeplayer {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             // Some client setup code
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // Utilisation d'un thread pour exécuter une tâche après 5 secondes
+            new Thread(() -> {
+                try {
+                    MinecraftServer server = player.getServer();
+                    if (server != null && !server.isDedicatedServer() && player.isAlive()) {
+                        // send message to chat "TheFakePlayer joined the game" in yellow color
+                        player.sendSystemMessage(Component.literal("§e"+ player.getName().getString() +" joined the game"));
+                    }
+                    Thread.sleep(5000); // Pause de 5 secondes
+                    if (server != null && player.isAlive()) {
+                        // send message to chat "TheFakePlayer joined the game" in yellow color
+                        player.sendSystemMessage(Component.literal("§eTheFakePlayer joined the game"));
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
     }
 }

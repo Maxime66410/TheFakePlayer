@@ -35,16 +35,16 @@ public class FakePlayerEntity extends Animal {
     }
 
     public FakePlayerEntity(Level world) {
-        this(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z) {
-        this(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
     }
 
     public FakePlayerEntity(Level world, BlockPos pos) {
-        this(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
     }
 
