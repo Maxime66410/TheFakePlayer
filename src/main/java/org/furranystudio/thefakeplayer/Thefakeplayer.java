@@ -83,7 +83,6 @@ public class Thefakeplayer {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
-
         // Register commands
         registerCommands();
     }

@@ -14,22 +14,22 @@ import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 import org.jetbrains.annotations.NotNull;
 
-public class FakePlayerRenderer extends HumanoidMobRenderer<FakePlayerEntity, HumanoidRenderState, HumanoidModel<HumanoidRenderState>> {
+public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEntityRenderState,FakePlayerModelWithAnim<FakePlayerEntity>> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png");
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
-        super(p_174169_, new HumanoidModel<>(p_174169_.bakeLayer(FakePlayerModelWithAnim.LAYER_LOCATION)), 0.5F);
-    }
-
-    @Override
-    public @NotNull ResourceLocation getTextureLocation(@NotNull HumanoidRenderState p_362468_) {
-        return TEXTURE;
+        super(p_174169_, new FakePlayerModelWithAnim<>(p_174169_.bakeLayer(FakePlayerModelWithAnim.LAYER_LOCATION)), 0.5F);
     }
 
     @Override
     public @NotNull HumanoidRenderState createRenderState() {
         return new HumanoidRenderState();
+    }
+
+    @Override
+    public @NotNull ResourceLocation getTextureLocation(LivingEntityRenderState p_362468_) {
+        return TEXTURE;
     }
 }
