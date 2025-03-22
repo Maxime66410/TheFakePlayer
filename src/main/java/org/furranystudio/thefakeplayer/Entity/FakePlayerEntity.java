@@ -57,11 +57,6 @@ public class FakePlayerEntity extends Animal {
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
     }
 
-    /*public ResourceLocation getSkinTexture() {
-        UUID fakeUUID = this.getUUID(); // Génère un UUID unique
-        return DefaultPlayerSkin.getDefaultSkin(fakeUUID); // Utilise un skin vanilla aléatoire
-    }*/
-
     public static AttributeSupplier.Builder createFakePlayerAttributes() {
         return Player.createAttributes();
     }
@@ -79,4 +74,9 @@ public class FakePlayerEntity extends Animal {
     public boolean isFood(ItemStack p_27600_) {
         return false;
     }
+
+    /*public ResourceLocation getSkinTexture() {
+        UUID fakeUUID = this.getUUID(); // Génère un UUID unique
+        return DefaultPlayerSkin.getDefaultSkin(fakeUUID); // Utilise un skin vanilla aléatoire
+    }*/
 }

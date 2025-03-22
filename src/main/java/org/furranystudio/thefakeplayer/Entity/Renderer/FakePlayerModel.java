@@ -16,27 +16,22 @@ import org.furranystudio.thefakeplayer.Thefakeplayer;
 public class FakePlayerModel<T extends FakePlayerEntity> extends EntityModel<EntityRenderState> {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "fakeplayermodel"), "main");
-	private final ModelPart body;
-	private final ModelPart head;
-	private final ModelPart torso;
-	private final ModelPart leftArm;
-	private final ModelPart leftItem;
-	private final ModelPart rightArm;
-	private final ModelPart rightItem;
-	private final ModelPart leftLeg;
-	private final ModelPart rightLeg;
+
+	private final ModelParts parts;
 
 	public FakePlayerModel(ModelPart root) {
 		super(root);
-		this.body = root.getChild("body");
-		this.head = this.body.getChild("head");
-		this.torso = this.body.getChild("torso");
-		this.leftArm = this.body.getChild("leftArm");
-		this.leftItem = this.leftArm.getChild("leftItem");
-		this.rightArm = this.body.getChild("rightArm");
-		this.rightItem = this.rightArm.getChild("rightItem");
-		this.leftLeg = this.body.getChild("leftLeg");
-		this.rightLeg = this.body.getChild("rightLeg");
+        ModelPart body = root.getChild("body");
+        ModelPart head = body.getChild("head");
+        ModelPart torso = body.getChild("torso");
+        ModelPart leftArm = body.getChild("leftArm");
+        ModelPart leftItem = leftArm.getChild("leftItem");
+        ModelPart rightArm = body.getChild("rightArm");
+        ModelPart rightItem = rightArm.getChild("rightItem");
+        ModelPart leftLeg = body.getChild("leftLeg");
+        ModelPart rightLeg = body.getChild("rightLeg");
+
+		this.parts = new ModelParts(body, head, torso, leftArm, leftItem, rightArm, rightItem, leftLeg, rightLeg);
 	}
 
 	public static LayerDefinition createBodyLayer() {
@@ -70,6 +65,10 @@ public class FakePlayerModel<T extends FakePlayerEntity> extends EntityModel<Ent
 		return LayerDefinition.create(meshdefinition, 64, 64);
 	}
 
+    public ModelParts getParts() {
+        return parts;
+    }
+
 
 	/*@Override
 	public void setupAnim(FakePlayerEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
@@ -78,6 +77,18 @@ public class FakePlayerModel<T extends FakePlayerEntity> extends EntityModel<Ent
 
 	@Override
 	public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-		body.render(poseStack, vertexConsumer, packedLight, packedOverlay);
+		this.parts.body.render(poseStack, vertexConsumer, packedLight, packedOverlay);
 	}*/
+
+	private record ModelParts(
+			ModelPart body,
+			ModelPart head,
+			ModelPart torso,
+			ModelPart leftArm,
+			ModelPart leftItem,
+			ModelPart rightArm,
+			ModelPart rightItem,
+			ModelPart leftLeg,
+			ModelPart rightLeg
+	) {}
 }
