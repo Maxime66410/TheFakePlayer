@@ -23,6 +23,6 @@ public class ModEntities {
     public static final RegistryObject<EntityType<FakePlayerEntity>> FAKE_PLAYER_ENTITY = ENTITIES.register("fake_player_entity",
             () -> EntityType.Builder.<FakePlayerEntity>of(FakePlayerEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f)
-                    .build(ResourceKey.create(ForgeRegistries.ENTITY_TYPES.getRegistryKey(), ResourceLocation.withDefaultNamespace("fake_player_entity")))
+                    .build(ResourceKey.create(ForgeRegistries.ENTITY_TYPES.getRegistryKey(), ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID,"fake_player_entity")))
     );
 }
