@@ -20,7 +20,7 @@ public class FakePlayerRenderer extends HumanoidMobRenderer<FakePlayerEntity, Hu
             ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png");
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
-        super(p_174169_, new HumanoidModel<>(p_174169_.bakeLayer(FakePlayerModel.LAYER_LOCATION)), 0.5F);
+        super(p_174169_, new HumanoidModel<>(p_174169_.bakeLayer(FakePlayerModelWithAnim.LAYER_LOCATION)), 0.5F);
     }
 
     @Override
