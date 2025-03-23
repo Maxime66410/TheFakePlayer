@@ -87,41 +87,35 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
         super(entityType, world);
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
         super(entityType, world);
         this.setPos(x, y, z);
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
         super(entityType, world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world, BlockPos pos) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
         this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
     }
 
     // Methods - Entity for FakePlayerEntity
@@ -156,6 +150,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 );
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+
+        UpdateEntityProfile();
     }
 
     // Update the entity's profile
@@ -212,18 +208,9 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
-        // Skin location: thefakeplayer:skins/dream.png
-        // Skin path: config/thefakeplayer/skins/dream.png (relative to the game directory)
-
-        System.out.println("Skin location: " + skin.getPath());
-
         ResourceLocation skinLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "config/thefakeplayer/" + skin.getPath());
 
-        System.out.println("Skin location: " + skinLocation.getPath());
-
         File skinFile = new File(skinLocation.getPath());
-
-        System.out.println(skinFile.exists());
 
         // Update the entity's texture
         FakePlayerRenderer.updateTextureFromFile(skinFile);
