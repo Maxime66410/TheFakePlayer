@@ -86,36 +86,30 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     // Constructeurs
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
         super(entityType, world);
-        this.setCustomName(Component.literal("Steve"));
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
         super(entityType, world);
         this.setPos(x, y, z);
-        this.setCustomName(Component.literal("Steve"));
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
         super(entityType, world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
-        this.setCustomName(Component.literal("Steve"));
     }
 
     public FakePlayerEntity(Level world) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
-        this.setCustomName(Component.literal("Steve"));
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
-        this.setCustomName(Component.literal("Steve"));
     }
 
     public FakePlayerEntity(Level world, BlockPos pos) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
-        this.setCustomName(Component.literal("Steve"));
     }
 
     // Methods - Entity for FakePlayerEntity
@@ -151,6 +145,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
+        // Update the entity's profile
         UpdateEntityProfile();
     }
 

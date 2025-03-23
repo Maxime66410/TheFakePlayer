@@ -57,8 +57,17 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int argb = bufferedImage.getRGB(x, y);
-                    int rgba = ((argb & 0xFF) << 24) | ((argb >> 8) & 0xFFFFFF);
-                    nativeImage.setPixel(x, y, rgba);
+                    int a = (argb >> 24) & 0xFF;  // Alpha
+                    int r = (argb >> 16) & 0xFF;  // Red
+                    int g = (argb >> 8) & 0xFF;   // Green
+                    int b = (argb) & 0xFF;        // Blue
+
+                    // We create a real argb value without modifying the order of the channels
+                    int correctedARGB = (a << 24) | (r << 16) | (g << 8) | b;
+
+                    // this.setPixelABGR(p_364494_, p_368505_, ARGB.toABGR(p_361991_));
+                    // WTF is ARGB.toABGR() ??
+                    nativeImage.setPixel(x, y, correctedARGB);
                 }
             }
             return nativeImage;
