@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -207,8 +208,21 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
-        // Bake new render for the entity
+        // Skin location: thefakeplayer:skins/dream.png
+        // Skin path: config/thefakeplayer/skins/dream.png (relative to the game directory)
 
+        System.out.println("Skin location: " + skin.getPath());
+
+        ResourceLocation skinLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "config/thefakeplayer/" + skin.getPath());
+
+        System.out.println("Skin location: " + skinLocation.getPath());
+
+        File skinFile = new File(skinLocation.getPath());
+
+        System.out.println(skinFile.exists());
+
+        // Update the entity's texture
+        FakePlayerRenderer.updateTextureFromFile(skinFile);
 
         // Update the current texture of the entity
         this.refreshDimensions();
@@ -324,12 +338,25 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
     // Download and save skin
     public static ResourceLocation downloadAndSaveSkin(String skinURL, String playerName) throws IOException {
+        // Avant de télécharger le skin, vérifier si le dossier skins existe
+        File skinsDir = new File("config/"+Thefakeplayer.MODID+"/skins");
+        if (!skinsDir.exists()) {
+            skinsDir.mkdirs();
+        }
+
+        String safePlayerName = playerName.toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+
+        // Vérifier si le skin existe déjà
+        File skinFile = new File(skinsDir, safePlayerName + ".png");
+        if (skinFile.exists()) {
+            return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
+        }
+
         BufferedImage skinImage = ImageIO.read(new URL(skinURL));  // Télécharger l'image
         // Convertir le nom du fichier en minuscules et remplacer les espaces par des underscores (_)
-        String safePlayerName = playerName.toLowerCase().replaceAll("[^a-z0-9_-]", "_");
-        File skinFile = new File("config/" +Thefakeplayer.MODID + "/skins/" + safePlayerName + ".png");  // Créer un fichier pour le skin
-        skinFile.getParentFile().mkdirs();  // Créer les répertoires si nécessaire
-        ImageIO.write(skinImage, "png", skinFile);  // Sauvegarder l'image sur le disque
+        File newSkinFile = new File("config/" +Thefakeplayer.MODID + "/skins/" + safePlayerName + ".png");  // Créer un fichier pour le skin
+        newSkinFile.getParentFile().mkdirs();  // Créer les répertoires si nécessaire
+        ImageIO.write(skinImage, "png", newSkinFile);  // Sauvegarder l'image sur le disque
 
         // Retourner le chemin du skin dans un format valide pour ResourceLocation
         return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
@@ -724,5 +751,9 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             Component deathMessage = Component.translatable("§e"+ this.getDisplayName().getString() +" left the game");
             this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
         }
+    }
+
+    public FakePlayerRenderer getRenderer() {
+        return (FakePlayerRenderer) Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(this);
     }
 }
