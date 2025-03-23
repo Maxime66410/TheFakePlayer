@@ -237,7 +237,38 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     // CUSTOM USERNAME AND SKIN
     private static final String[] NAMES = {
             "Notch", "Herobrine", "Dream", "Technoblade",
-            "Steve", "Alex", "CaptainSparklez", "PrestonPlayz"
+            "Steve", "Alex", "CaptainSparklez", "PrestonPlayz",
+            "Skeppy", "BadBoyHalo", "GeorgeNotFound", "DreamWasTaken",
+            "TommyInnit", "WilburSoot", "Tubbo", "Quackity",
+            "KarlJacobs", "Sapnap", "Nihachu", "CorpseHusband",
+            "Sykkuno", "Valkyrae", "Pokimane", "DisguisedToast",
+            "Ludwig", "xQc", "Mizkif", "Trainwreckstv",
+            "Asmongold", "Shroud", "Ninja", "DrLupo",
+            "TimTheTatman", "CourageJD", "NickMercs", "Tfue",
+            "Bugha", "Clix", "Mongraal", "Benjyfishy",
+            "MrBeast", "LazarBeam", "Lachlan", "Muselk",
+            "Fresh", "Lufu", "TheFantasio974", "BobLennon",
+            "FuzeIII", "Furious_Jumper", "Frigiel", "Aurelien_Sama",
+            "aypierre", "Aybierre", "AyR0b0t", "BillSilverlight",
+            "thoyy", "R3li3nt", "EdoRock", "JuJoue",
+            "Rayenryuu", "ShoukaSeikyo", "tabernak", "DavLec",
+            "Wotan83", "Myla", "dunaway", "MrMLDEG",
+            "Siphano", "KeyOps", "Clintwood", "Daidalos",
+            "Zedh74", "Alkasym", "AlpZz", "Bahason",
+            "Goldawn", "MC_Ika", "JimmyBoyyy", "kisukeisflo",
+            "LetoVII", "LeTsaudric", "Magicknup", "Mayukow",
+            "nems", "Orann", "RedToxx", "The_Boune",
+            "Steelorse", "TheGuill84", "tungstene74", "Vartac",
+            "Zakarum92", "Zanzag", "Zeptuna", "AEkeep",
+            "Anaey", "Ariux", "Boitameu", "DaftGuy",
+            "Guep", "Lerelo", "Lvcyd", "Mayleenor",
+            "Nimbus", "Nagatow12", "tadjin", "the_smitties",
+            "Louseron", "Max", "KoldGeneration", "Roi_Louis",
+            "Zephirr", "ninjaxx", "Hctuan", "THEODORT",
+            "itsBl0om", "L4rsen", "zafeel", "SamEzTwitch",
+            "SteveLeBoss", "GobelinFlingueur", "Posuu_", "_RAFFALE_",
+            "EmmaGraziano", "Chris_jeux", "FoxieFern", "Masturlute",
+            "Michoucroute", "Maxime66410"
     };
 
     // Get random name
