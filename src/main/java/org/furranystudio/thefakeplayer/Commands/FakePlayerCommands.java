@@ -2,8 +2,6 @@ package org.furranystudio.thefakeplayer.Commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -16,10 +14,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
-import java.util.List;
-
-import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak.T;
-import static com.mojang.text2speech.Narrator.LOGGER;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
@@ -43,11 +38,23 @@ public class FakePlayerCommands {
                             CommandSourceStack source = context.getSource();
                             ServerLevel world = source.getLevel();
 
-                            List<FakePlayerEntity> fakePlayers = world.getEntitiesOfClass(FakePlayerEntity.class, world.getWorldBorder().getCollisionShape().bounds());
-                            if(!fakePlayers.isEmpty()) {
-                                source.sendSuccess(() -> Component.literal("§cTheFakePlayer is already in the game"), false);
+
+                            // Verify if the FakePlayer is already here
+                            AtomicBoolean bIsFakePlayerIsHere = new AtomicBoolean(false);
+
+                            LevelEntityGetter<Entity> entities = world.getEntities();
+                            entities.getAll().forEach(entity -> {
+                                if (entity instanceof FakePlayerEntity) {
+                                    bIsFakePlayerIsHere.set(true);
+                                    return;
+                                }
+                            });
+
+                            if (bIsFakePlayerIsHere.get()) {
+                                source.sendSuccess(() -> Component.literal("§eTheFakePlayer is already here"), false);
                                 return Command.SINGLE_SUCCESS;
                             }
+
 
                             Player player = source.getPlayerOrException();
 
@@ -70,18 +77,15 @@ public class FakePlayerCommands {
                             CommandSourceStack source = context.getSource();
                             ServerLevel world = source.getLevel();
 
-                            /*// Pick all entities NOT OPTIMIZED
+                            // Pick all entities NOT OPTIMIZED
                             LevelEntityGetter<Entity> entities = world.getEntities();
                             // Check if the entity is a FakePlayer
                             entities.getAll().forEach(entity -> {
                                 if (entity instanceof FakePlayerEntity) {
                                     entity.remove(Entity.RemovalReason.DISCARDED);
                                 }
-                            });*/
+                            });
 
-                            // Pick all entities OPTIMIZED
-                            List<FakePlayerEntity> fakePlayers = world.getEntitiesOfClass(FakePlayerEntity.class, world.getWorldBorder().getCollisionShape().bounds());
-                            fakePlayers.forEach(Entity::discard);
 
                             context.getSource().sendSuccess(() -> Component.literal("§eTheFakePlayer left the game"), false);
 
