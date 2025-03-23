@@ -31,6 +31,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -431,6 +432,11 @@ public class FakePlayerEntity extends Animal implements NeutralMob {
     private void spawnAtLocation(ItemStack itemStack, ServerLevel level) {
         ItemEntity itemEntity = new ItemEntity(level, this.getX(), this.getY(), this.getZ(), itemStack);
         level.addFreshEntity(itemEntity);
+    }
+
+    @Override
+    protected void pickUpItem(ServerLevel p_363972_, ItemEntity p_21471_) {
+        super.pickUpItem(p_363972_, p_21471_);
     }
 
 }
