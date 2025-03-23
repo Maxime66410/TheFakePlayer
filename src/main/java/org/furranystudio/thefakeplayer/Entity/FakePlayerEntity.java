@@ -178,6 +178,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 e.printStackTrace();
             }
         }
+        else {
+            this.setCustomName(Component.literal("Steve"));
+            getRenderer().updateTexture(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png"));
+        }
     }
 
     // Create the entity's attributes

@@ -2,6 +2,7 @@ package org.furranystudio.thefakeplayer.Entity.Renderer;
 
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -69,7 +70,7 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
 
     public static void updateTextureFromFile(File skinFile) {
         try {
-            // Charge l'image depuis le fichier local
+            // load the image
             BufferedImage image = ImageIO.read(skinFile);
 
             NativeImage nativeImage = convertToNativeImage(image);
@@ -78,25 +79,26 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
                 return;
             }
 
-            // Crée une texture dynamique à partir de l'image
+            // create a DynamicTexture from the NativeImage
             DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
 
-            // Récupère le TextureManager de Minecraft
+            // get the TextureManager
             TextureManager textureManager = Minecraft.getInstance().getTextureManager();
 
-            // Crée un ResourceLocation temporaire
-            ResourceLocation textureLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/custom_skin");
+            // create a ResourceLocation
+            ResourceLocation textureLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/skins/custom_skin.png");
 
             if (dynamicTexture.getPixels() == null) {
                 throw new RuntimeException("NativeImage is not allocated.");
             }
 
-            // Applique la texture au manager
-            //textureManager.release(textureLocation);
-            //textureManager.register(textureLocation, dynamicTexture);
-
-            // Mets à jour la texture du renderer
-            //updateTexture(textureLocation);
+            RenderSystem.recordRenderCall(() -> {
+                // Applique la texture au manager
+                textureManager.release(textureLocation);
+                textureManager.register(textureLocation, dynamicTexture);
+                dynamicTexture.upload();
+                updateTexture(textureLocation);
+            });
 
         } catch (IOException e) {
             e.printStackTrace();
