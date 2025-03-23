@@ -15,6 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
@@ -41,17 +42,19 @@ public class FakePlayerCommands {
 
                             // Verify if the FakePlayer is already here
                             AtomicBoolean bIsFakePlayerIsHere = new AtomicBoolean(false);
+                            AtomicReference<String> fakePlayerName = new AtomicReference<>("TheFakePlayer");
 
                             LevelEntityGetter<Entity> entities = world.getEntities();
                             entities.getAll().forEach(entity -> {
                                 if (entity instanceof FakePlayerEntity) {
                                     bIsFakePlayerIsHere.set(true);
+                                    fakePlayerName.set(entity.getName().getString());
                                     return;
                                 }
                             });
 
                             if (bIsFakePlayerIsHere.get()) {
-                                source.sendSuccess(() -> Component.literal("§eTheFakePlayer is already here"), false);
+                                source.sendSuccess(() -> Component.literal("§e" + fakePlayerName + " is already here"), false);
                                 return Command.SINGLE_SUCCESS;
                             }
 
@@ -64,7 +67,7 @@ public class FakePlayerCommands {
 
                             world.addFreshEntity(fakePlayer);
 
-                            source.sendSuccess(() -> Component.literal("§eTheFakePlayer joined the game"), false);
+                            source.sendSuccess(() -> Component.literal("§e" + fakePlayer.getName().getString() + " joined the game"), false);
 
                             return Command.SINGLE_SUCCESS;
                         })

@@ -111,7 +111,8 @@ public class Thefakeplayer {
                     Thread.sleep(5000); // Pause de 5 secondes
                     if (server != null && player.isAlive()) {
                         // send message to chat "TheFakePlayer joined the game" in yellow color
-                        player.sendSystemMessage(Component.literal("§eTheFakePlayer joined the game"));
+                        player.sendSystemMessage(Component.literal("§eTheFakePlayer is initializing..."));
+                        // spawn the fake player
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

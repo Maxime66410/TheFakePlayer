@@ -32,4 +32,9 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
     public @NotNull ResourceLocation getTextureLocation(LivingEntityRenderState p_362468_) {
         return TEXTURE;
     }
+
+    // Update the current texture of the fake player
+    public void updateTexture() {
+        
+    }
 }

@@ -1,13 +1,30 @@
+// Original source
 package org.furranystudio.thefakeplayer.Entity;
 
+// org imports
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.mojang.authlib.properties.Property;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer;
+import org.furranystudio.thefakeplayer.Thefakeplayer;
+import org.jetbrains.annotations.Nullable;
+
+// mc imports
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.TimeUtil;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -25,6 +42,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,20 +52,175 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+// java imports
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class FakePlayerEntity extends Animal implements NeutralMob {
+public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCarrier {
 
+    // Attributs - Variables
     private static final UniformInt PERSISTENT_ANGER_TIME = TimeUtil.rangeOfSeconds(20, 39);
     private int remainingPersistentAngerTime;
     @javax.annotation.Nullable
     private UUID persistentAngerTarget;
+    private static final int FAKEPLAYER_INVENTORY_SIZE = 36;
+    private final SimpleContainer inventory = new SimpleContainer(FAKEPLAYER_INVENTORY_SIZE);
+
+    // Attributs - Entity Info
+    private static String ENTITY_NAME = "fake_player_entity";
+    private static String entityUUID;
+    private ResourceLocation customSkin;
+
+    public ResourceLocation getCustomSkin() {
+        return customSkin != null ? customSkin : ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID,"textures/entities/basefakeplayer.png");  // Skin par défaut si aucun personnalisé
+    }
+
+    public void setCustomSkin(ResourceLocation skin) {
+        this.customSkin = skin;
+
+
+
+        // Update the current texture of the entity
+        this.refreshDimensions();
+    }
+
+    public static String getEntityName() {
+        return ENTITY_NAME;
+    }
+
+    public static void setEntityName(String entityName) {
+        ENTITY_NAME = entityName;
+    }
+
+    public static String getEntityUUID() {
+        return entityUUID;
+    }
+
+    public static void setEntityUUID(String newentityUUID) {
+        entityUUID = newentityUUID;
+    }
+
+    // CUSTOM USERNAME AND SKIN
+    private static final String[] NAMES = {
+            "Notch", "Herobrine", "Dream", "Technoblade",
+            "Steve", "Alex", "CaptainSparklez", "PrestonPlayz"
+    };
+
+    // Get random name
+    public static String getRandomName() {
+        return NAMES[new Random().nextInt(NAMES.length)];
+    }
+
+    // Get UUID from player name
+    public static String getUUIDFromName(String playerName) throws IOException {
+        URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + playerName);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        if (conn.getResponseCode() != 200) {
+            return null;
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder responseBuilder = new StringBuilder();
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            responseBuilder.append(line);
+        }
+
+        reader.close();
+
+        // Convert to string
+        String response = responseBuilder.toString();
+
+        // Convert to JSON
+        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
+
+        // Get the UUID
+        if (jsonObject.has("id")) {
+            return jsonObject.get("id").getAsString();
+        }
+
+        return null;
+    }
+
+    // Get skin URL from UUID
+    public static String getSkinURL(String uuid) throws IOException {
+        URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        if (conn.getResponseCode() != 200) {
+            return null;
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder responseBuilder = new StringBuilder();
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            responseBuilder.append(line);
+        }
+
+        reader.close();
+
+        // Convert to string
+        String response = responseBuilder.toString();
+
+        // Convert to JSON
+        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
+
+        // Get the properties
+        if (jsonObject.has("properties")) {
+            JsonArray properties = jsonObject.getAsJsonArray("properties");
+            for (JsonElement element : properties) {
+                JsonObject property = element.getAsJsonObject();
+                if (property.get("name").getAsString().equals("textures")) {
+                    String base64Encoded = property.get("value").getAsString();
+                    String decoded = new String(Base64.getDecoder().decode(base64Encoded));
+                    JsonObject textureData = JsonParser.parseString(decoded).getAsJsonObject();
+                    return textureData.getAsJsonObject("textures").getAsJsonObject("SKIN").get("url").getAsString();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static ResourceLocation downloadAndSaveSkin(String skinURL, String playerName) throws IOException {
+        BufferedImage skinImage = ImageIO.read(new URL(skinURL));  // Télécharger l'image
+        // Convertir le nom du fichier en minuscules et remplacer les espaces par des underscores (_)
+        String safePlayerName = playerName.toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+        File skinFile = new File("config/" +Thefakeplayer.MODID + "/skins/" + safePlayerName + ".png");  // Créer un fichier pour le skin
+        skinFile.getParentFile().mkdirs();  // Créer les répertoires si nécessaire
+        ImageIO.write(skinImage, "png", skinFile);  // Sauvegarder l'image sur le disque
+
+        // Retourner le chemin du skin dans un format valide pour ResourceLocation
+        return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
+    }
+
+    // Download and save skin and apply it to the entity
+    public void applySkin(String playerName, String uuid) {
+        try {
+            String skinURL = getSkinURL(uuid);  // Récupérer l'URL du skin à partir de l'UUID
+            if (skinURL != null) {
+                // Télécharger le skin et l'enregistrer localement
+                setCustomSkin(downloadAndSaveSkin(skinURL, playerName));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     // Constructeurs
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
@@ -81,7 +254,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob {
     // Méthodes
     @Override
     protected void registerGoals() {
-        // TODO Auto-generated method stub
+
+        // Add goals to the entity
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
         this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
@@ -108,6 +282,25 @@ public class FakePlayerEntity extends Animal implements NeutralMob {
                         )
                 );
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
+        this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+
+        // Change the entity's name
+        if (hasInternetConnection()) {
+            try {
+                String playerName = getRandomName();
+                String playerUUID = getUUIDFromName(playerName);
+                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
+
+                if (playerUUID != null && skinURL != null) {
+                    this.setCustomName(Component.literal(playerName));
+                    setEntityName(playerName);
+                    setEntityUUID(playerUUID);
+                    applySkin(playerName, playerUUID);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -154,6 +347,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob {
 
     public static boolean canSpawn(EntityType<? extends FakePlayerEntity> p_223365_, LevelAccessor p_223366_, EntitySpawnReason p_223367_, BlockPos p_223368_, RandomSource p_223369_) {
         return Animal.checkAnimalSpawnRules(p_223365_, p_223366_, p_223367_, p_223368_, p_223369_);
+    }
+
+    public boolean canBreakDoors() {
+        return true;
     }
 
     @Override
@@ -435,8 +632,51 @@ public class FakePlayerEntity extends Animal implements NeutralMob {
     }
 
     @Override
+    public boolean canHoldItem(ItemStack p_21545_) {
+        return super.canHoldItem(p_21545_);
+    }
+
+    // Inventory Logic
+    @Override
+    public SimpleContainer getInventory() {
+        return this.inventory;
+    }
+
+    @Override
+    public SlotAccess getSlot(int p_149995_) {
+        int i = p_149995_ - 300;
+        return i >= 0 && i < this.inventory.getContainerSize() ? SlotAccess.forContainer(this.inventory, i) : super.getSlot(p_149995_);
+    }
+
+    @Override
     protected void pickUpItem(ServerLevel p_363972_, ItemEntity p_21471_) {
         super.pickUpItem(p_363972_, p_21471_);
+        InventoryCarrier.pickUpItem(p_363972_, this, this, p_21471_);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag p_34458_) {
+        super.addAdditionalSaveData(p_34458_);
+        this.addPersistentAngerSaveData(p_34458_);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag p_34446_) {
+        super.readAdditionalSaveData(p_34446_);
+        this.readPersistentAngerSaveData(this.level(), p_34446_);
+    }
+
+    public static boolean hasInternetConnection() {
+        try {
+            URL url = new URL("https://www.google.com");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("HEAD");
+            connection.setConnectTimeout(3000); // Timeout de 3 secondes
+            connection.connect();
+            return (connection.getResponseCode() == 200);
+        } catch (IOException e) {
+            return false;
+        }
     }
 
 }
