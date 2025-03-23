@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEntityRenderState,FakePlayerModelWithAnim<FakePlayerEntity>> {
 
-    private static final ResourceLocation TEXTURE =
+    private static ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png");
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
@@ -33,8 +33,7 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
         return TEXTURE;
     }
 
-    // Update the current texture of the fake player
-    public void updateTexture() {
-        
+    public void updateTexture(ResourceLocation localTexture) {
+        TEXTURE = localTexture;
     }
 }

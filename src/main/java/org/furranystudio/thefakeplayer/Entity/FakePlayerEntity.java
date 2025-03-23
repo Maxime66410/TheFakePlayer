@@ -7,9 +7,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.properties.Property;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 import org.jetbrains.annotations.Nullable;
@@ -87,6 +89,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
+        // Bake new render for the entity
 
 
         // Update the current texture of the entity
@@ -225,30 +228,42 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     // Constructeurs
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
         super(entityType, world);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
         super(entityType, world);
         this.setPos(x, y, z);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
         super(entityType, world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     public FakePlayerEntity(Level world, BlockPos pos) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
     }
 
     // Méthodes
@@ -283,7 +298,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 );
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+    }
 
+    private void UpdateEntityProfile()
+    {
         // Change the entity's name
         if (hasInternetConnection()) {
             try {
@@ -664,6 +682,25 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void readAdditionalSaveData(CompoundTag p_34446_) {
         super.readAdditionalSaveData(p_34446_);
         this.readPersistentAngerSaveData(this.level(), p_34446_);
+    }
+
+    @Override
+    public void die(DamageSource p_21014_) {
+        super.die(p_21014_);
+        if (!this.level().isClientSide) {
+            Entity entity = p_21014_.getEntity();
+            if (entity instanceof LivingEntity) {
+                Component deathMessage = Component.translatable("death.attack." + p_21014_.getMsgId(), this.getDisplayName(), entity.getDisplayName());
+                this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
+            }
+            else {
+                Component deathMessage = Component.translatable("death.attack." + p_21014_.getMsgId(), this.getDisplayName());
+                this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
+            }
+
+            Component deathMessage = Component.translatable("§e"+ this.getDisplayName().getString() +" left the game");
+            this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
+        }
     }
 
     public static boolean hasInternetConnection() {
