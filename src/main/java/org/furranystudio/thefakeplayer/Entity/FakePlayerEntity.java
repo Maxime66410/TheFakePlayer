@@ -82,10 +82,128 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     private static String entityUUID;
     private ResourceLocation customSkin;
 
+    // Constructeurs
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
+        super(entityType, world);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
+        super(entityType, world);
+        this.setPos(x, y, z);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
+        super(entityType, world);
+        this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    public FakePlayerEntity(Level world) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    public FakePlayerEntity(Level world, double x, double y, double z) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setPos(x, y, z);
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    public FakePlayerEntity(Level world, BlockPos pos) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        this.setCustomName(Component.literal("Steve"));
+        UpdateEntityProfile();
+    }
+
+    // Methods - Entity for FakePlayerEntity
+    @Override
+    protected void registerGoals() {
+
+        // Add goals to the entity
+        this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
+        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
+        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true)); // Permet d'attaquer le joueur
+        this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
+            return true;
+        })); // Permet de casser les portes
+        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true)); // Permet d'ouvrir les portes
+        this.goalSelector.addGoal(4, new JumpGoal() {
+            @Override
+            public boolean canUse() {
+                return true;
+            }
+        });
+        this.goalSelector.addGoal(5, new PanicGoal(this, 1.25D)); // Permet de paniquer
+        this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
+        this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+        this.targetSelector
+                .addGoal(
+                        2,
+                        new NearestAttackableTargetGoal<>(
+                                this, Mob.class, 3, false, false, (p_28879_, p_363579_) -> p_28879_ instanceof LivingEntity
+                        )
+                );
+        this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
+        this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+    }
+
+    // Update the entity's profile
+    private void UpdateEntityProfile()
+    {
+        // Change the entity's name
+        if (hasInternetConnection()) {
+            try {
+                String playerName = getRandomName();
+                String playerUUID = getUUIDFromName(playerName);
+                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
+
+                if (playerUUID != null && skinURL != null) {
+                    this.setCustomName(Component.literal(playerName));
+                    setEntityName(playerName);
+                    setEntityUUID(playerUUID);
+                    applySkin(playerName, playerUUID);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Create the entity's attributes
+    public static AttributeSupplier.Builder createFakePlayerAttributes() {
+        return Mob.createMobAttributes()
+                // Same stats as a player
+                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.25D)
+                .add(Attributes.ATTACK_DAMAGE, 1.0D)
+                .add(Attributes.FOLLOW_RANGE, 32.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 1.0D)
+                .add(Attributes.ATTACK_SPEED, 4.0D)
+                .add(Attributes.ARMOR, 0.0D)
+                .add(Attributes.ARMOR_TOUGHNESS, 0.0D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.0D)
+                .add(Attributes.BLOCK_BREAK_SPEED, 5.0D)
+                .add(Attributes.MINING_EFFICIENCY, 5.0D)
+                .add(Attributes.BLOCK_INTERACTION_RANGE, 6.0D);
+
+    }
+
+    // Get Custom Skin Location
     public ResourceLocation getCustomSkin() {
         return customSkin != null ? customSkin : ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID,"textures/entities/basefakeplayer.png");  // Skin par défaut si aucun personnalisé
     }
 
+    // Set Custom Skin Location
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
@@ -96,18 +214,22 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.refreshDimensions();
     }
 
+    // Get Entity Name
     public static String getEntityName() {
         return ENTITY_NAME;
     }
 
+    // Set Entity Name
     public static void setEntityName(String entityName) {
         ENTITY_NAME = entityName;
     }
 
+    // Get Entity UUID
     public static String getEntityUUID() {
         return entityUUID;
     }
 
+    // Set Entity UUID
     public static void setEntityUUID(String newentityUUID) {
         entityUUID = newentityUUID;
     }
@@ -200,6 +322,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         return null;
     }
 
+    // Download and save skin
     public static ResourceLocation downloadAndSaveSkin(String skinURL, String playerName) throws IOException {
         BufferedImage skinImage = ImageIO.read(new URL(skinURL));  // Télécharger l'image
         // Convertir le nom du fichier en minuscules et remplacer les espaces par des underscores (_)
@@ -225,99 +348,17 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         }
     }
 
-    // Constructeurs
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
-        super(entityType, world);
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
-        super(entityType, world);
-        this.setPos(x, y, z);
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
-        super(entityType, world);
-        this.setPos(pos.getX(), pos.getY(), pos.getZ());
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    public FakePlayerEntity(Level world) {
-        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    public FakePlayerEntity(Level world, double x, double y, double z) {
-        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
-        this.setPos(x, y, z);
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    public FakePlayerEntity(Level world, BlockPos pos) {
-        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
-        this.setPos(pos.getX(), pos.getY(), pos.getZ());
-        this.setCustomName(Component.literal("Steve"));
-        UpdateEntityProfile();
-    }
-
-    // Méthodes
-    @Override
-    protected void registerGoals() {
-
-        // Add goals to the entity
-        this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
-        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
-        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true)); // Permet d'attaquer le joueur
-        this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
-            return true;
-        })); // Permet de casser les portes
-        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true)); // Permet d'ouvrir les portes
-        this.goalSelector.addGoal(4, new JumpGoal() {
-            @Override
-            public boolean canUse() {
-                return true;
-            }
-        });
-        this.goalSelector.addGoal(5, new PanicGoal(this, 1.25D)); // Permet de paniquer
-        this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
-        this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-        this.targetSelector
-                .addGoal(
-                        2,
-                        new NearestAttackableTargetGoal<>(
-                                this, Mob.class, 3, false, false, (p_28879_, p_363579_) -> p_28879_ instanceof LivingEntity
-                        )
-                );
-        this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
-        this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
-    }
-
-    private void UpdateEntityProfile()
-    {
-        // Change the entity's name
-        if (hasInternetConnection()) {
-            try {
-                String playerName = getRandomName();
-                String playerUUID = getUUIDFromName(playerName);
-                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
-
-                if (playerUUID != null && skinURL != null) {
-                    this.setCustomName(Component.literal(playerName));
-                    setEntityName(playerName);
-                    setEntityUUID(playerUUID);
-                    applySkin(playerName, playerUUID);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    // Check if the entity has internet connection
+    public static boolean hasInternetConnection() {
+        try {
+            URL url = new URL("https://www.google.com");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("HEAD");
+            connection.setConnectTimeout(3000); // Timeout de 3 secondes
+            connection.connect();
+            return (connection.getResponseCode() == 200);
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -343,24 +384,6 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
             this.remove(RemovalReason.DISCARDED);
         }
-    }
-
-    public static AttributeSupplier.Builder createFakePlayerAttributes() {
-        return Mob.createMobAttributes()
-                // Same stats as a player
-                .add(Attributes.MAX_HEALTH, 20.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.25D)
-                .add(Attributes.ATTACK_DAMAGE, 1.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D)
-                .add(Attributes.ATTACK_KNOCKBACK, 1.0D)
-                .add(Attributes.ATTACK_SPEED, 4.0D)
-                .add(Attributes.ARMOR, 0.0D)
-                .add(Attributes.ARMOR_TOUGHNESS, 0.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 0.0D)
-                .add(Attributes.BLOCK_BREAK_SPEED, 5.0D)
-                .add(Attributes.MINING_EFFICIENCY, 5.0D)
-                .add(Attributes.BLOCK_INTERACTION_RANGE, 6.0D);
-
     }
 
     public static boolean canSpawn(EntityType<? extends FakePlayerEntity> p_223365_, LevelAccessor p_223366_, EntitySpawnReason p_223367_, BlockPos p_223368_, RandomSource p_223369_) {
@@ -702,18 +725,4 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
         }
     }
-
-    public static boolean hasInternetConnection() {
-        try {
-            URL url = new URL("https://www.google.com");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("HEAD");
-            connection.setConnectTimeout(3000); // Timeout de 3 secondes
-            connection.connect();
-            return (connection.getResponseCode() == 200);
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
 }
