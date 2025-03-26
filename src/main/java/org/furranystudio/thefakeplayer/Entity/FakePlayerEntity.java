@@ -10,9 +10,12 @@ import com.mojang.authlib.properties.Property;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ItemLike;
 import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 import org.jetbrains.annotations.Nullable;
@@ -75,7 +78,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     private int remainingPersistentAngerTime;
     @javax.annotation.Nullable
     private UUID persistentAngerTarget;
-    private static final int FAKEPLAYER_INVENTORY_SIZE = 36;
+    private static int FAKEPLAYER_INVENTORY_SIZE = 36;
     private final SimpleContainer inventory = new SimpleContainer(FAKEPLAYER_INVENTORY_SIZE);
 
     // Attributs - Entity Info
@@ -177,6 +180,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                                 this, Mob.class, 3, false, false, (p_28879_, p_363579_) -> p_28879_ instanceof LivingEntity
                         )
                 );
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal(this, Player.class, true));
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
@@ -798,16 +802,50 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         InventoryCarrier.pickUpItem(p_363972_, this, this, p_21471_);
     }
 
+    // Add to save data
     @Override
     public void addAdditionalSaveData(CompoundTag p_34458_) {
         super.addAdditionalSaveData(p_34458_);
         this.addPersistentAngerSaveData(p_34458_);
+        p_34458_.putString("EntityName", ENTITY_NAME);
+        p_34458_.putString("EntityUUID", entityUUID);
+        p_34458_.putString("CustomSkin", this.getCustomSkin().toString());
+        p_34458_.putInt("RemainingPersistentAngerTime", this.remainingPersistentAngerTime);
+        p_34458_.putInt("InventorySize", this.FAKEPLAYER_INVENTORY_SIZE);
+        // save inventory contents
+        ListTag list = new ListTag();
+        for (int i = 0; i < this.inventory.getContainerSize(); i++) {
+            ItemStack stack = this.inventory.getItem(i);
+            if (!stack.isEmpty()) {
+                CompoundTag itemTag = new CompoundTag();
+                itemTag.putByte("Slot", (byte) i);
+                stack.save((HolderLookup.Provider) itemTag);
+                list.add(itemTag);
+            }
+        }
+        p_34458_.put("Items", list);
     }
 
+    // Read from save data
     @Override
     public void readAdditionalSaveData(CompoundTag p_34446_) {
         super.readAdditionalSaveData(p_34446_);
         this.readPersistentAngerSaveData(this.level(), p_34446_);
+        ENTITY_NAME = p_34446_.getString("EntityName");
+        entityUUID = p_34446_.getString("EntityUUID");
+        this.setCustomSkin(ResourceLocation.tryParse(p_34446_.getString("CustomSkin")));
+        this.remainingPersistentAngerTime = p_34446_.getInt("RemainingPersistentAngerTime");
+        this.FAKEPLAYER_INVENTORY_SIZE = p_34446_.getInt("InventorySize");
+        // read inventory contents
+        ListTag list = p_34446_.getList("Items", 10);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag itemTag = list.getCompound(i);
+            int slot = itemTag.getByte("Slot") & 255;
+            ItemStack stack = new ItemStack((ItemLike) itemTag);
+            if (!stack.isEmpty()) {
+                this.inventory.setItem(slot, stack);
+            }
+        }
     }
 
     @Override
