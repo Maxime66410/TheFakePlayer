@@ -46,4 +46,9 @@ public class ClientModEvents {
 
         });
     }
+
+    @SubscribeEvent
+    public static final void entityClientRederer(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.FAKE_PLAYER_ENTITY.get(), FakePlayerRenderer::new);
+    }
 }

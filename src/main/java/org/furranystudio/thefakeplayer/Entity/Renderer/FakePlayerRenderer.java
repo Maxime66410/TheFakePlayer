@@ -15,7 +15,12 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.furranystudio.thefakeplayer.Entity.ModEntities;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 import org.jetbrains.annotations.NotNull;
 
@@ -115,3 +120,4 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
     }
 
 }
+
