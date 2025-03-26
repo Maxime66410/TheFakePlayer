@@ -34,6 +34,13 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 		this.parts = new ModelParts(body, head, torso, leftArm, leftItem, rightArm, rightItem, leftLeg, rightLeg);
 	}
 
+	@Override
+	public void setupAnim(EntityRenderState p_370046_) {
+		super.setupAnim(p_370046_);
+		this.root().getAllParts().forEach(ModelPart::resetPose);
+		
+	}
+
 	public static LayerDefinition createBodyLayer() {
 		MeshDefinition meshdefinition = new MeshDefinition();
 		PartDefinition partdefinition = meshdefinition.getRoot();
