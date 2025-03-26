@@ -15,6 +15,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.ItemLike;
 import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
@@ -95,6 +96,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     {
         super(entityType, world);
         UpdateEntityProfile(playerName);
+        this.setCanPickUpLoot(true);
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
@@ -183,6 +185,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal(this, Player.class, true));
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+
+        this.setCanPickUpLoot(true);
 
         // Update the entity's profile
         UpdateEntityProfile();
@@ -539,8 +543,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     @Override
     protected void dropCustomDeathLoot(ServerLevel p_345102_, DamageSource p_21385_, boolean p_21387_) {
         super.dropCustomDeathLoot(p_345102_, p_21385_, p_21387_);
-        // Create list of items to drop with random stuff
-        List<Item> Lootitems = Arrays.asList(
+        // OLD RANDOM DROP LOOT //
+        /*List<Item> Lootitems = Arrays.asList(
                 Items.DIAMOND,
                 Items.GOLD_INGOT,
                 Items.IRON_INGOT,
@@ -771,6 +775,14 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 Item item = Lootitems.get(this.random.nextInt(Lootitems.size()));
                 this.spawnAtLocation(new ItemStack(item), p_345102_);
             }
+        }*/
+
+        // Drop all items from the inventory
+        for (int i = 0; i < this.inventory.getContainerSize(); i++) {
+            ItemStack itemStack = this.inventory.getItem(i);
+            if (!itemStack.isEmpty()) {
+                this.spawnAtLocation(itemStack, p_345102_);
+            }
         }
     }
 
@@ -799,7 +811,24 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     @Override
     protected void pickUpItem(ServerLevel p_363972_, ItemEntity p_21471_) {
         super.pickUpItem(p_363972_, p_21471_);
-        InventoryCarrier.pickUpItem(p_363972_, this, this, p_21471_);
+        inventory.addItem(p_21471_.getItem());
+        p_21471_.discard();
+        //InventoryCarrier.pickUpItem(p_363972_, this, this, p_21471_);
+    }
+
+    @Override
+    protected Vec3i getPickupReach() {
+        return super.getPickupReach();
+    }
+
+    @Override
+    public void setCanPickUpLoot(boolean p_21554_) {
+        super.setCanPickUpLoot(p_21554_);
+    }
+
+    @Override
+    public boolean wantsToPickUp(ServerLevel p_367521_, ItemStack p_21546_) {
+        return super.wantsToPickUp(p_367521_, p_21546_);
     }
 
     // Add to save data
@@ -812,18 +841,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         p_34458_.putString("CustomSkin", this.getCustomSkin().toString());
         p_34458_.putInt("RemainingPersistentAngerTime", this.remainingPersistentAngerTime);
         p_34458_.putInt("InventorySize", this.FAKEPLAYER_INVENTORY_SIZE);
-        // save inventory contents
-        ListTag list = new ListTag();
-        for (int i = 0; i < this.inventory.getContainerSize(); i++) {
-            ItemStack stack = this.inventory.getItem(i);
-            if (!stack.isEmpty()) {
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putByte("Slot", (byte)i);
-                stack.save((HolderLookup.Provider) itemTag);
-                list.add(itemTag);
-            }
-        }
-        p_34458_.put("Inventory", save(list));
+        // Save the inventory
+        ListTag listTag = new ListTag();
+        this.save(listTag);
+        p_34458_.put("Inventory", listTag);
     }
 
     // Read from save data
@@ -836,9 +857,9 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.setCustomSkin(ResourceLocation.tryParse(p_34446_.getString("CustomSkin")));
         this.remainingPersistentAngerTime = p_34446_.getInt("RemainingPersistentAngerTime");
         this.FAKEPLAYER_INVENTORY_SIZE = p_34446_.getInt("InventorySize");
-        // read inventory contents
-        ListTag listtag = p_34446_.getList("Inventory", FAKEPLAYER_INVENTORY_SIZE);
-        this.load(listtag);
+        // Load the inventory
+        ListTag listTag = p_34446_.getList("Inventory", 10);
+        this.load(listTag);
     }
 
     @Override
@@ -864,6 +885,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         return (FakePlayerRenderer) Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(this);
     }
 
+    // Inventory Logic Methods - Save
     public ListTag save(ListTag p_36027_) {
         for(int i = 0; i < this.inventory.getItems().size(); ++i) {
             if (!((ItemStack)this.inventory.getItems().get(i)).isEmpty()) {
@@ -875,6 +897,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         return p_36027_;
     }
 
+    // Inventory Logic Methods - Load
     public void load(ListTag p_36036_) {
         this.inventory.clearContent();
 
@@ -886,6 +909,5 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 this.inventory.getItems().set(j, itemstack);
             }
         }
-
     }
 }
