@@ -88,9 +88,21 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         super(entityType, world);
     }
 
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, String playerName)
+    {
+        super(entityType, world);
+        UpdateEntityProfile(playerName);
+    }
+
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
         super(entityType, world);
         this.setPos(x, y, z);
+    }
+
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z, String playerName) {
+        super(entityType, world);
+        this.setPos(x, y, z);
+        UpdateEntityProfile(playerName);
     }
 
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
@@ -98,8 +110,19 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
     }
 
+    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos, String playerName) {
+        super(entityType, world);
+        this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        UpdateEntityProfile(playerName);
+    }
+
     public FakePlayerEntity(Level world) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+    }
+
+    public FakePlayerEntity(Level world, String playerName) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        UpdateEntityProfile(playerName);
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z) {
@@ -107,9 +130,21 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.setPos(x, y, z);
     }
 
+    public FakePlayerEntity(Level world, double x, double y, double z, String playerName) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setPos(x, y, z);
+        UpdateEntityProfile(playerName);
+    }
+
     public FakePlayerEntity(Level world, BlockPos pos) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public FakePlayerEntity(Level world, BlockPos pos, String playerName) {
+        super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
+        this.setPos(pos.getX(), pos.getY(), pos.getZ());
+        UpdateEntityProfile(playerName);
     }
 
     // Methods - Entity for FakePlayerEntity
@@ -143,7 +178,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                         )
                 );
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
-        this.goalSelector.addGoal(4, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+        this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
         // Update the entity's profile
         UpdateEntityProfile();
@@ -156,6 +191,30 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         if (hasInternetConnection()) {
             try {
                 String playerName = getRandomName();
+                String playerUUID = getUUIDFromName(playerName);
+                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
+
+                if (playerUUID != null && skinURL != null) {
+                    this.setCustomName(Component.literal(playerName));
+                    setEntityName(playerName);
+                    setEntityUUID(playerUUID);
+                    applySkin(playerName, playerUUID);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            this.setCustomName(Component.literal("Steve"));
+            getRenderer().updateTexture(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png"));
+        }
+    }
+
+    private void UpdateEntityProfile(String playerName)
+    {
+        // Change the entity's name
+        if (hasInternetConnection()) {
+            try {
                 String playerUUID = getUUIDFromName(playerName);
                 String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
 
@@ -268,7 +327,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             "itsBl0om", "L4rsen", "zafeel", "SamEzTwitch",
             "SteveLeBoss", "GobelinFlingueur", "Posuu_", "_RAFFALE_",
             "EmmaGraziano", "Chris_jeux", "FoxieFern", "Masturlute",
-            "Michoucroute", "Maxime66410"
+            "Michoucroute", "Maxime66410", "mimimama", "White_fri2z"
     };
 
     // Get random name
