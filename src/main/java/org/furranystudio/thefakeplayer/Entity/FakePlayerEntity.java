@@ -818,12 +818,12 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             ItemStack stack = this.inventory.getItem(i);
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
-                itemTag.putByte("Slot", (byte) i);
+                itemTag.putByte("Slot", (byte)i);
                 stack.save((HolderLookup.Provider) itemTag);
                 list.add(itemTag);
             }
         }
-        p_34458_.put("Items", list);
+        p_34458_.put("Inventory", save(list));
     }
 
     // Read from save data
@@ -837,15 +837,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.remainingPersistentAngerTime = p_34446_.getInt("RemainingPersistentAngerTime");
         this.FAKEPLAYER_INVENTORY_SIZE = p_34446_.getInt("InventorySize");
         // read inventory contents
-        ListTag list = p_34446_.getList("Items", 10);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag itemTag = list.getCompound(i);
-            int slot = itemTag.getByte("Slot") & 255;
-            ItemStack stack = new ItemStack((ItemLike) itemTag);
-            if (!stack.isEmpty()) {
-                this.inventory.setItem(slot, stack);
-            }
-        }
+        ListTag listtag = p_34446_.getList("Inventory", FAKEPLAYER_INVENTORY_SIZE);
+        this.load(listtag);
     }
 
     @Override
@@ -869,5 +862,30 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
     public FakePlayerRenderer getRenderer() {
         return (FakePlayerRenderer) Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(this);
+    }
+
+    public ListTag save(ListTag p_36027_) {
+        for(int i = 0; i < this.inventory.getItems().size(); ++i) {
+            if (!((ItemStack)this.inventory.getItems().get(i)).isEmpty()) {
+                CompoundTag compoundtag = new CompoundTag();
+                compoundtag.putByte("Slot", (byte)i);
+                p_36027_.add(((ItemStack)this.inventory.getItems().get(i)).save(this.registryAccess(), compoundtag));
+            }
+        }
+        return p_36027_;
+    }
+
+    public void load(ListTag p_36036_) {
+        this.inventory.clearContent();
+
+        for(int i = 0; i < p_36036_.size(); ++i) {
+            CompoundTag compoundtag = p_36036_.getCompound(i);
+            int j = compoundtag.getByte("Slot") & 255;
+            ItemStack itemstack = (ItemStack)ItemStack.parse(this.registryAccess(), compoundtag).orElse(ItemStack.EMPTY);
+            if (j >= 0 && j < this.inventory.getItems().size()) {
+                this.inventory.getItems().set(j, itemstack);
+            }
+        }
+
     }
 }
