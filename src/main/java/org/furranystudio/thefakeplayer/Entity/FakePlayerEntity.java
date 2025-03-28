@@ -87,6 +87,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     private static String entityUUID;
     private ResourceLocation customSkin;
 
+    // Animation variables
+    public final AnimationState idleAnimationState = new AnimationState();
+
+
     // Constructeurs
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
         super(entityType, world);
@@ -158,7 +162,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
         // Add goals to the entity
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
-        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
+        this.goalSelector.addGoal(0, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true)); // Permet d'attaquer le joueur
         this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
@@ -909,5 +913,14 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 this.inventory.getItems().set(j, itemstack);
             }
         }
+    }
+
+    @Override
+    public void tick() {
+        if(level().isClientSide()) {
+            this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
+        }
+
+        super.tick();
     }
 }
