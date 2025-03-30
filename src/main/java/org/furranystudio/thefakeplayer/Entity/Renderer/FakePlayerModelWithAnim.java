@@ -17,6 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
+import org.furranystudio.thefakeplayer.Entity.Anim.FakePlayerAnimList;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 
@@ -56,16 +57,18 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 		float f2 = p_370046_.walkAnimationSpeed;
 
 		// Walk animation
-		this.getParts().leftLeg.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
-		this.getParts().rightLeg.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
-		this.getParts().leftArm.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
-		this.getParts().rightArm.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
-		this.getParts().leftItem.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
-		this.getParts().rightItem.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
-		this.getParts().rightLeg.yRot = 0.005F;
-		this.getParts().leftLeg.yRot = -0.005F;
-		this.getParts().rightLeg.zRot = 0.005F;
-		this.getParts().leftLeg.zRot = -0.005F;
+		if(f1 != 0.0F && f2 != 0.0F) {
+			this.getParts().leftLeg.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
+			this.getParts().rightLeg.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
+			this.getParts().leftArm.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
+			this.getParts().rightArm.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
+			this.getParts().leftItem.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f2;
+			this.getParts().rightItem.xRot = Mth.cos(f1 * 0.6662F + (float) Math.PI) * 1.4F * f2;
+			this.getParts().rightLeg.yRot = 0.005F;
+			this.getParts().leftLeg.yRot = -0.005F;
+			this.getParts().rightLeg.zRot = 0.005F;
+			this.getParts().leftLeg.zRot = -0.005F;
+		}
 	}
 
 
