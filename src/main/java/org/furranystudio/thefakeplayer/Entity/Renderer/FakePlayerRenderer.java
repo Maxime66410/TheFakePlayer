@@ -8,6 +8,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
@@ -29,7 +30,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEntityRenderState,FakePlayerModelWithAnim<FakePlayerEntity>> {
+public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntityRenderState,FakePlayerModelWithAnim<FakePlayerEntity>> {
 
     private static ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png");
@@ -44,7 +45,7 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
     }
 
     @Override
-    public @NotNull ResourceLocation getTextureLocation(LivingEntityRenderState p_362468_) {
+    public ResourceLocation getTextureLocation(ArmedEntityRenderState p_362468_) {
         return TEXTURE;
     }
 
@@ -118,6 +119,5 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, LivingEnti
             e.printStackTrace();
         }
     }
-
 }
 

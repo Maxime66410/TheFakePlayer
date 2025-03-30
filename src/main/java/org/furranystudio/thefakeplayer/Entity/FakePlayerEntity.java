@@ -89,6 +89,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
     // Animation variables
     public final AnimationState idleAnimationState = new AnimationState();
+    public float maxCrossbowChargeDuration = 2.0F;
+    public int ticksUsingItem;
+    public boolean isCrouching;
+    public double speedValue;
 
 
     // Constructeurs
@@ -917,6 +921,8 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
     @Override
     public void tick() {
+        speedValue = this.getDeltaMovement().length();
+
         if(level().isClientSide()) {
             this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
         }
