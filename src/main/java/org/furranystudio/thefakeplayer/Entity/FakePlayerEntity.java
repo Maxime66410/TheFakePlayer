@@ -16,6 +16,9 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -103,6 +106,16 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     private boolean hasTabListEntry = false;
     private boolean initialized = false;
     private int chatTimer = 20 * 60 * 3; // premier message après 3 minutes
+
+    // Skin Mojang brut (base64 value + signature pour GameProfile)
+    private String skinTextureValue = null;
+    private String skinTextureSignature = null;
+    private String skinUrl = "";
+
+    // EntityData pour synchroniser l'URL du skin serveur → clients automatiquement
+    private static final EntityDataAccessor<String> SKIN_URL =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.STRING);
+    private String lastSkinUrl = "";
 
     private static final String[] CHAT_MESSAGES = {
         "lol",
@@ -193,6 +206,12 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         UpdateEntityProfile(playerName);
     }
 
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SKIN_URL, "");
+    }
+
     // Suppression : retire du tab list + message de déconnexion
     @Override
     public void remove(RemovalReason reason) {
@@ -210,6 +229,13 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     private ClientboundPlayerInfoUpdatePacket buildTabListPacket() {
         try {
             GameProfile profile = new GameProfile(this.getUUID(), this.getName().getString());
+
+            // Ajouter la texture Mojang au profil — signature obligatoire pour que le client l'accepte
+            if (skinTextureValue != null && skinTextureSignature != null && !skinTextureSignature.isEmpty()) {
+                profile.getProperties().put("textures", new Property(
+                    "textures", skinTextureValue, skinTextureSignature
+                ));
+            }
 
             ClientboundPlayerInfoUpdatePacket.Entry entry = new ClientboundPlayerInfoUpdatePacket.Entry(
                 this.getUUID(), profile, true, 0, GameType.SURVIVAL, null, true, 0, null
@@ -411,12 +437,12 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
-        ResourceLocation skinLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "config/thefakeplayer/" + skin.getPath());
-
-        File skinFile = new File(skinLocation.getPath());
-
-        // Update the entity's texture
-        FakePlayerRenderer.updateTextureFromFile(skinFile);
+        // Mise à jour de la texture uniquement côté client (Minecraft.getInstance() n'existe pas côté serveur)
+        if (this.level().isClientSide()) {
+            ResourceLocation skinLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "config/thefakeplayer/" + skin.getPath());
+            File skinFile = new File(skinLocation.getPath());
+            FakePlayerRenderer.updateTextureFromFile(skinFile);
+        }
 
         // Update the current texture of the entity
         this.refreshDimensions();
@@ -518,9 +544,9 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         return null;
     }
 
-    // Get skin URL from UUID
-    public static String getSkinURL(String uuid) throws IOException {
-        URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid);
+    // Retourne [skinUrl, base64Value, signature] depuis l'UUID Mojang, ou null si introuvable
+    public static String[] getSkinProperty(String uuid) throws IOException {
+        URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
 
@@ -531,34 +557,35 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         StringBuilder responseBuilder = new StringBuilder();
         String line;
-
         while ((line = reader.readLine()) != null) {
             responseBuilder.append(line);
         }
-
         reader.close();
 
-        // Convert to string
-        String response = responseBuilder.toString();
+        JsonObject jsonObject = JsonParser.parseString(responseBuilder.toString()).getAsJsonObject();
 
-        // Convert to JSON
-        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
-
-        // Get the properties
         if (jsonObject.has("properties")) {
             JsonArray properties = jsonObject.getAsJsonArray("properties");
             for (JsonElement element : properties) {
                 JsonObject property = element.getAsJsonObject();
                 if (property.get("name").getAsString().equals("textures")) {
-                    String base64Encoded = property.get("value").getAsString();
-                    String decoded = new String(Base64.getDecoder().decode(base64Encoded));
+                    String base64Value = property.get("value").getAsString();
+                    String signature = property.has("signature") ? property.get("signature").getAsString() : null;
+                    String decoded = new String(Base64.getDecoder().decode(base64Value));
                     JsonObject textureData = JsonParser.parseString(decoded).getAsJsonObject();
-                    return textureData.getAsJsonObject("textures").getAsJsonObject("SKIN").get("url").getAsString();
+                    String skinUrl = textureData.getAsJsonObject("textures").getAsJsonObject("SKIN").get("url").getAsString();
+                    return new String[]{ skinUrl, base64Value, signature };
                 }
             }
         }
 
         return null;
+    }
+
+    // Compat : retourne uniquement l'URL du skin (utilisé en interne)
+    public static String getSkinURL(String uuid) throws IOException {
+        String[] data = getSkinProperty(uuid);
+        return data != null ? data[0] : null;
     }
 
     // Download and save skin
@@ -590,10 +617,16 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     // Download and save skin and apply it to the entity
     public void applySkin(String playerName, String uuid) {
         try {
-            String skinURL = getSkinURL(uuid);  // Récupérer l'URL du skin à partir de l'UUID
-            if (skinURL != null) {
-                // Télécharger le skin et l'enregistrer localement
-                setCustomSkin(downloadAndSaveSkin(skinURL, playerName));
+            String[] skinData = getSkinProperty(uuid);
+            if (skinData != null) {
+                skinUrl              = skinData[0];
+                skinTextureValue     = skinData[1];
+                skinTextureSignature = skinData[2];
+
+                setCustomSkin(downloadAndSaveSkin(skinUrl, playerName));
+
+                // Synchroniser l'URL du skin vers tous les clients via EntityData (MC vanilla)
+                this.entityData.set(SKIN_URL, skinUrl);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -982,6 +1015,11 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         p_34458_.putString("CustomSkin", this.getCustomSkin().toString());
         p_34458_.putInt("RemainingPersistentAngerTime", this.remainingPersistentAngerTime);
         p_34458_.putInt("InventorySize", this.FAKEPLAYER_INVENTORY_SIZE);
+        if (skinTextureValue != null) {
+            p_34458_.putString("SkinTextureValue", skinTextureValue);
+            p_34458_.putString("SkinTextureSignature", skinTextureSignature != null ? skinTextureSignature : "");
+            p_34458_.putString("SkinUrl", skinUrl);
+        }
         // Save the inventory
         ListTag listTag = new ListTag();
         this.save(listTag);
@@ -998,6 +1036,15 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.setCustomSkin(ResourceLocation.tryParse(p_34446_.getString("CustomSkin")));
         this.remainingPersistentAngerTime = p_34446_.getInt("RemainingPersistentAngerTime");
         this.FAKEPLAYER_INVENTORY_SIZE = p_34446_.getInt("InventorySize");
+        if (p_34446_.contains("SkinTextureValue")) {
+            skinTextureValue = p_34446_.getString("SkinTextureValue");
+            String sig = p_34446_.getString("SkinTextureSignature");
+            skinTextureSignature = sig.isEmpty() ? null : sig;
+            skinUrl = p_34446_.getString("SkinUrl");
+            if (!skinUrl.isEmpty()) {
+                this.entityData.set(SKIN_URL, skinUrl);
+            }
+        }
         // Load the inventory
         ListTag listTag = p_34446_.getList("Inventory", 10);
         this.load(listTag);
@@ -1055,6 +1102,13 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
         if (level().isClientSide()) {
             this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
+
+            // Appliquer le skin dès que l'URL est synchronisée depuis le serveur
+            String skinUrl = this.entityData.get(SKIN_URL);
+            if (!skinUrl.isEmpty() && !skinUrl.equals(lastSkinUrl)) {
+                lastSkinUrl = skinUrl;
+                org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer.updateTextureFromURL(skinUrl);
+            }
         } else {
             if (!initialized) {
                 initialized = true;

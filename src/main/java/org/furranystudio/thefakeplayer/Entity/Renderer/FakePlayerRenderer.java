@@ -83,6 +83,29 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
         }
     }
 
+    public static void updateTextureFromURL(String skinUrl) {
+        try {
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(new java.net.URL(skinUrl));
+            NativeImage nativeImage = convertToNativeImage(image);
+            if (nativeImage == null) return;
+
+            DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
+            TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+            ResourceLocation textureLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/skins/custom_skin.png");
+
+            if (dynamicTexture.getPixels() == null) return;
+
+            RenderSystem.recordRenderCall(() -> {
+                textureManager.release(textureLocation);
+                textureManager.register(textureLocation, dynamicTexture);
+                dynamicTexture.upload();
+                updateTexture(textureLocation);
+            });
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void updateTextureFromFile(File skinFile) {
         try {
             // load the image
