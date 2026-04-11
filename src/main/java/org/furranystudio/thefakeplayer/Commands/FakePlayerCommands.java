@@ -68,8 +68,6 @@ public class FakePlayerCommands {
 
                             world.addFreshEntity(fakePlayer);
 
-                            source.sendSuccess(() -> Component.literal("§e" + fakePlayer.getName().getString() + " joined the game"), false);
-
                             return Command.SINGLE_SUCCESS;
                         })
         );
@@ -115,8 +113,6 @@ public class FakePlayerCommands {
 
                             world.addFreshEntity(fakePlayer);
 
-                            source.sendSuccess(() -> Component.literal("§e" + fakePlayer.getName().getString() + " joined the game"), false);
-
                             return Command.SINGLE_SUCCESS;
                         })
                 )
@@ -139,9 +135,6 @@ public class FakePlayerCommands {
                                     entity.remove(Entity.RemovalReason.DISCARDED);
                                 }
                             });
-
-
-                            context.getSource().sendSuccess(() -> Component.literal("§e" + fakePlayerName + " left the game"), false);
 
                             return Command.SINGLE_SUCCESS;
                         })

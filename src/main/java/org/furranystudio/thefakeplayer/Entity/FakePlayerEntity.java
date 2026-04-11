@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -13,9 +14,13 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.ItemLike;
 import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
@@ -94,6 +99,34 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public boolean isCrouching;
     public double speedValue;
 
+    // Tab list / chat
+    private boolean hasTabListEntry = false;
+    private boolean initialized = false;
+    private int chatTimer = 20 * 60 * 3; // premier message après 3 minutes
+
+    private static final String[] CHAT_MESSAGES = {
+        "lol",
+        "gg",
+        "quelqu'un est là ?",
+        "nice base",
+        "t'es en train de construire quoi ?",
+        "j'ai trouvé des diamants",
+        "brb",
+        "back",
+        "ce seed est ouf",
+        "...",
+        "je mine un peu",
+        "on se fait une mine ?",
+        "j'ai faim lol",
+        "attention creeper derrière toi",
+        "je vais explorer un peu",
+        "ok je craft",
+        "t'as du bois ?",
+        "j'ai failli mourir",
+        "bien joué",
+        "on est à combien de distance du spawn ?"
+    };
+
 
     // Constructeurs
     public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
@@ -158,6 +191,106 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
         UpdateEntityProfile(playerName);
+    }
+
+    // Suppression : retire du tab list + message de déconnexion
+    @Override
+    public void remove(RemovalReason reason) {
+        if (!this.level().isClientSide() && hasTabListEntry) {
+            removeFromTabList();
+            hasTabListEntry = false;
+            broadcastLeaveMessage();
+        }
+        super.remove(reason);
+    }
+
+    // Construit le packet tab list pour ce fake player via réflexion
+    // Le constructeur public ne prend que Collection<ServerPlayer>, pas List<Entry>
+    @SuppressWarnings("unchecked")
+    private ClientboundPlayerInfoUpdatePacket buildTabListPacket() {
+        try {
+            GameProfile profile = new GameProfile(this.getUUID(), this.getName().getString());
+
+            ClientboundPlayerInfoUpdatePacket.Entry entry = new ClientboundPlayerInfoUpdatePacket.Entry(
+                this.getUUID(), profile, true, 0, GameType.SURVIVAL, null, true, 0, null
+            );
+
+            EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions = EnumSet.of(
+                ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
+                ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED,
+                ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY,
+                ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE
+            );
+
+            // Le constructeur public exige Collection<ServerPlayer> — on passe une liste vide
+            // via cast non vérifié (safe à runtime grâce à l'erasure Java)
+            Collection<ServerPlayer> emptyPlayers = (Collection<ServerPlayer>)(Collection<?>) Collections.emptyList();
+            ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(actions, emptyPlayers);
+
+            // On remplace le champ entries avec notre entrée custom (nom officiel Mojang)
+            java.lang.reflect.Field entriesField = ClientboundPlayerInfoUpdatePacket.class.getDeclaredField("entries");
+            entriesField.setAccessible(true);
+            entriesField.set(packet, List.of(entry));
+
+            return packet;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to build FakePlayer tab list packet", e);
+        }
+    }
+
+    // Envoie le packet d'ajout dans le tab list à tous les joueurs connectés
+    public void addToTabList() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        ClientboundPlayerInfoUpdatePacket packet = buildTabListPacket();
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+            player.connection.send(packet);
+        }
+    }
+
+    // Envoie l'entrée tab list à un joueur spécifique (pour les joueurs qui rejoignent après)
+    public void sendTabListEntryTo(ServerPlayer player) {
+        player.connection.send(buildTabListPacket());
+    }
+
+    // Envoie le packet de retrait du tab list à tous les joueurs connectés
+    private void removeFromTabList() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        MinecraftServer server = serverLevel.getServer();
+
+        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(
+            List.of(this.getUUID())
+        );
+
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            player.connection.send(packet);
+        }
+    }
+
+    // Broadcast "joined the game" à tous les joueurs
+    private void broadcastJoinMessage() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        serverLevel.getServer().getPlayerList().broadcastSystemMessage(
+            Component.literal("§e" + this.getName().getString() + " joined the game"), false
+        );
+    }
+
+    // Broadcast "left the game" à tous les joueurs
+    private void broadcastLeaveMessage() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        serverLevel.getServer().getPlayerList().broadcastSystemMessage(
+            Component.literal("§e" + this.getName().getString() + " left the game"), false
+        );
+    }
+
+    // Envoie un message aléatoire dans le chat au nom du fake player
+    private void sendRandomChatMessage() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        String msg = CHAT_MESSAGES[this.random.nextInt(CHAT_MESSAGES.length)];
+        serverLevel.getServer().getPlayerList().broadcastSystemMessage(
+            Component.literal("<" + this.getName().getString() + "> " + msg), false
+        );
+        // Reset timer entre 3 et 10 minutes
+        chatTimer = 20 * 60 * (3 + this.random.nextInt(8));
     }
 
     // Methods - Entity for FakePlayerEntity
@@ -878,14 +1011,11 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             if (entity instanceof LivingEntity) {
                 Component deathMessage = Component.translatable("death.attack." + p_21014_.getMsgId(), this.getDisplayName(), entity.getDisplayName());
                 this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
-            }
-            else {
+            } else {
                 Component deathMessage = Component.translatable("death.attack." + p_21014_.getMsgId(), this.getDisplayName());
                 this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
             }
-
-            Component deathMessage = Component.translatable("§e"+ this.getDisplayName().getString() +" left the game");
-            this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
+            // "left the game" est géré dans remove() pour couvrir tous les cas
         }
     }
 
@@ -923,8 +1053,22 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public void tick() {
         speedValue = this.getDeltaMovement().length();
 
-        if(level().isClientSide()) {
+        if (level().isClientSide()) {
             this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
+        } else {
+            if (!initialized) {
+                initialized = true;
+                if (!hasTabListEntry) {
+                    addToTabList();
+                    hasTabListEntry = true;
+                    broadcastJoinMessage();
+                }
+            }
+            if (chatTimer > 0) {
+                chatTimer--;
+            } else {
+                sendRandomChatMessage();
+            }
         }
 
         super.tick();

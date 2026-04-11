@@ -100,24 +100,17 @@ public class Thefakeplayer {
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            // Utilisation d'un thread pour exécuter une tâche après 5 secondes
-            new Thread(() -> {
-                try {
-                    MinecraftServer server = player.getServer();
-                    if (server != null && !server.isDedicatedServer() && player.isAlive()) {
-                        // send message to chat "TheFakePlayer joined the game" in yellow color
-                        player.sendSystemMessage(Component.literal("§e"+ player.getName().getString() +" joined the game"));
+            MinecraftServer server = player.getServer();
+            if (server == null) return;
+
+            // Si un fake player est déjà dans le monde, renvoyer son entrée tab list au joueur qui rejoint
+            server.getAllLevels().forEach(level -> {
+                level.getEntities().getAll().forEach(entity -> {
+                    if (entity instanceof org.furranystudio.thefakeplayer.Entity.FakePlayerEntity fakePlayer) {
+                        fakePlayer.sendTabListEntryTo(player);
                     }
-                    Thread.sleep(5000); // Pause de 5 secondes
-                    if (server != null && player.isAlive()) {
-                        // send message to chat "TheFakePlayer joined the game" in yellow color
-                        player.sendSystemMessage(Component.literal("§eTheFakePlayer is initializing..."));
-                        // spawn the fake player
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
+                });
+            });
         }
     }
 }
