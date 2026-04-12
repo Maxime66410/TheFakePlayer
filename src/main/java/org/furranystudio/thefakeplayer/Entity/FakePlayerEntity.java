@@ -187,6 +187,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     public FakePlayerEntity(Level world, double x, double y, double z) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
+        UpdateEntityProfile(); // Doit être après super() — les field initializers s'exécutent après super() et écraseraient skinTextureValue
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z, String playerName) {
@@ -354,58 +355,59 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
         this.setCanPickUpLoot(true);
-
-        // Update the entity's profile
-        UpdateEntityProfile();
     }
 
     // Update the entity's profile
     private void UpdateEntityProfile()
     {
-        // Change the entity's name
         if (hasInternetConnection()) {
-            try {
-                String playerName = getRandomName();
-                String playerUUID = getUUIDFromName(playerName);
-                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
+            int maxAttempts = 5;
+            for (int attempt = 0; attempt < maxAttempts; attempt++) {
+                try {
+                    String playerName = getRandomName();
+                    String playerUUID = getUUIDFromName(playerName);
+                    if (playerUUID == null) continue;
+                    // Un seul appel getSkinProperty — évite le double-fetch qui déclenche le rate-limit Mojang
+                    String[] skinData = getSkinProperty(playerUUID);
+                    if (skinData == null) continue;
 
-                if (playerUUID != null && skinURL != null) {
                     this.setCustomName(Component.literal(playerName));
                     setEntityName(playerName);
                     setEntityUUID(playerUUID);
-                    applySkin(playerName, playerUUID);
+                    applySkin(playerName, skinData);
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            // Fallback si aucun nom valide trouvé en 5 tentatives
+            this.setCustomName(Component.literal("Steve"));
         }
         else {
             this.setCustomName(Component.literal("Steve"));
-            getRenderer().updateTexture(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png"));
         }
     }
 
     private void UpdateEntityProfile(String playerName)
     {
-        // Change the entity's name
         if (hasInternetConnection()) {
             try {
                 String playerUUID = getUUIDFromName(playerName);
-                String skinURL = (playerUUID != null) ? getSkinURL(playerUUID) : null;
+                if (playerUUID == null) { this.setCustomName(Component.literal("Steve")); return; }
+                // Un seul appel getSkinProperty — évite le double-fetch qui déclenche le rate-limit Mojang
+                String[] skinData = getSkinProperty(playerUUID);
+                if (skinData == null) { this.setCustomName(Component.literal("Steve")); return; }
 
-                if (playerUUID != null && skinURL != null) {
-                    this.setCustomName(Component.literal(playerName));
-                    setEntityName(playerName);
-                    setEntityUUID(playerUUID);
-                    applySkin(playerName, playerUUID);
-                }
+                this.setCustomName(Component.literal(playerName));
+                setEntityName(playerName);
+                setEntityUUID(playerUUID);
+                applySkin(playerName, skinData);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         else {
             this.setCustomName(Component.literal("Steve"));
-            getRenderer().updateTexture(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "textures/entities/basefakeplayer.png"));
         }
     }
 
@@ -614,19 +616,21 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
     }
 
-    // Download and save skin and apply it to the entity
-    public void applySkin(String playerName, String uuid) {
+    // Applique les données de skin pré-fetchées (évite un double appel session server)
+    public void applySkin(String playerName, String[] skinData) {
         try {
-            String[] skinData = getSkinProperty(uuid);
-            if (skinData != null) {
-                skinUrl              = skinData[0];
-                skinTextureValue     = skinData[1];
-                skinTextureSignature = skinData[2];
+            skinUrl              = skinData[0];
+            skinTextureValue     = skinData[1];
+            skinTextureSignature = skinData[2];
 
-                setCustomSkin(downloadAndSaveSkin(skinUrl, playerName));
+            setCustomSkin(downloadAndSaveSkin(skinUrl, playerName));
 
-                // Synchroniser l'URL du skin vers tous les clients via EntityData (MC vanilla)
-                this.entityData.set(SKIN_URL, skinUrl);
+            // Synchroniser l'URL du skin vers tous les clients via EntityData (MC vanilla)
+            this.entityData.set(SKIN_URL, skinUrl);
+
+            // Si déjà dans le tab list, re-envoyer le packet avec la texture à jour
+            if (hasTabListEntry) {
+                addToTabList();
             }
         } catch (IOException e) {
             e.printStackTrace();
