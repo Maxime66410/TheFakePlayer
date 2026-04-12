@@ -1,6 +1,8 @@
 package org.furranystudio.thefakeplayer.Entity.Goals;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.ItemStack;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
@@ -16,7 +18,8 @@ public class FakePlayerEatGoal extends Goal {
 
     public FakePlayerEatGoal(FakePlayerEntity entity) {
         this.entity = entity;
-        this.setFlags(EnumSet.of(Flag.LOOK));
+        // Flags vides : le goal tourne librement sans bloquer ni être bloqué par d'autres goals
+        this.setFlags(EnumSet.noneOf(Flag.class));
     }
 
     @Override
@@ -28,17 +31,25 @@ public class FakePlayerEatGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return eatTicks < EAT_DURATION;
+        return eatTicks < EAT_DURATION && entity.getHealth() < entity.getMaxHealth();
     }
 
     @Override
     public void start() {
         eatTicks = 0;
+        entity.swing(InteractionHand.MAIN_HAND);
     }
 
     @Override
     public void tick() {
         eatTicks++;
+
+        // Son de repas toutes les 4 ticks pendant la mangée
+        if (eatTicks % 4 == 0) {
+            entity.playSound(SoundEvents.GENERIC_EAT.value(), 0.5F,
+                    0.9F + entity.level().random.nextFloat() * 0.2F);
+        }
+
         if (eatTicks >= EAT_DURATION) {
             var food = foodStack.get(DataComponents.FOOD);
             if (food != null) {

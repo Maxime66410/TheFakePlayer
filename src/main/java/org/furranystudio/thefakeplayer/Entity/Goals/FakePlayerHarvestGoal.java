@@ -1,6 +1,8 @@
 package org.furranystudio.thefakeplayer.Entity.Goals;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,9 +16,9 @@ public class FakePlayerHarvestGoal extends Goal {
     private BlockPos targetCrop = null;
     private int harvestTick = 0;
     private int cooldown = 0;
-    private static final int HARVEST_DELAY = 60;  // 3s avant de casser la culture
+    private static final int HARVEST_DELAY = 60;   // 3s de cassage
     private static final int SEARCH_RANGE = 8;
-    private static final int COOLDOWN_TICKS = 100; // 5s entre chaque recherche
+    private static final int COOLDOWN_TICKS = 100; // 5s si aucune culture trouvée
 
     public FakePlayerHarvestGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -56,24 +58,46 @@ public class FakePlayerHarvestGoal extends Goal {
         }
 
         harvestTick++;
+
+        // Animation progressive de cassage (craquelures sur le bloc)
+        if (entity.level() instanceof ServerLevel serverLevel) {
+            int progress = (int) ((harvestTick / (float) HARVEST_DELAY) * 9);
+            serverLevel.destroyBlockProgress(entity.getId(), targetCrop, progress);
+        }
+
         if (harvestTick >= HARVEST_DELAY) {
             BlockState state = entity.level().getBlockState(targetCrop);
             if (state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
+                entity.swing(InteractionHand.MAIN_HAND);
                 entity.level().destroyBlock(targetCrop, true, entity);
                 // Replanter avec l'état initial de la culture
                 if (entity.level().getBlockState(targetCrop).isAir()) {
                     entity.level().setBlock(targetCrop, crop.defaultBlockState(), 3);
                 }
             }
-            stop();
+
+            // Chaînage : chercher la prochaine culture immédiatement
+            BlockPos next = findMatureCrop();
+            if (next != null) {
+                targetCrop = next;
+                harvestTick = 0;
+                entity.getNavigation().moveTo(
+                        targetCrop.getX() + 0.5, targetCrop.getY(), targetCrop.getZ() + 0.5, 1.0);
+            } else {
+                // Aucune culture trouvée : cooldown puis stop
+                cooldown = COOLDOWN_TICKS;
+                targetCrop = null;
+                harvestTick = 0;
+                entity.getNavigation().stop();
+            }
         }
     }
 
     @Override
     public void stop() {
+        if (cooldown == 0) cooldown = COOLDOWN_TICKS;
         targetCrop = null;
         harvestTick = 0;
-        cooldown = COOLDOWN_TICKS;
         entity.getNavigation().stop();
     }
 
