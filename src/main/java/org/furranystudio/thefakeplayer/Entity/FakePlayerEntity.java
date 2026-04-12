@@ -336,14 +336,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-        this.targetSelector
-                .addGoal(
-                        2,
-                        new NearestAttackableTargetGoal<>(
-                                this, Mob.class, 3, false, false, (p_28879_, p_363579_) -> p_28879_ instanceof LivingEntity
-                        )
-                );
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal(this, Player.class, true));
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
