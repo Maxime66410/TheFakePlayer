@@ -124,6 +124,10 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     private static final EntityDataAccessor<Integer> SWING_ANIM_TICK =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
 
+    // Interpolation côté client pour lisser l'animation de swing (60fps)
+    public float oSwingAnimFrac = 0.0F; // valeur tick précédent
+    public float swingAnimFrac = 0.0F;  // valeur tick courant
+
     private static final String[] CHAT_MESSAGES = {
         "lol",
         "gg",
@@ -1130,6 +1134,10 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         if (level().isClientSide()) {
             this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
+
+            // Interpolation swing : mémoriser l'ancienne valeur avant de mettre à jour
+            oSwingAnimFrac = swingAnimFrac;
+            swingAnimFrac = (10 - this.entityData.get(SWING_ANIM_TICK)) / 10.0F;
 
             // Appliquer le skin dès que l'URL est synchronisée depuis le serveur
             String skinUrl = this.entityData.get(SKIN_URL);
