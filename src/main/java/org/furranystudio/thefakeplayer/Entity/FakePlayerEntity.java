@@ -121,8 +121,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     // EntityData pour synchroniser les animations serveur → clients
     private static final EntityDataAccessor<Integer> EAT_ANIM_TICK =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Float> ATTACK_ANIM_SYNC =
-        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> SWING_ANIM_TICK =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
 
     private static final String[] CHAT_MESSAGES = {
         "lol",
@@ -219,13 +219,20 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         super.defineSynchedData(builder);
         builder.define(SKIN_URL, "");
         builder.define(EAT_ANIM_TICK, 0);
-        builder.define(ATTACK_ANIM_SYNC, 0.0F);
+        builder.define(SWING_ANIM_TICK, 0);
     }
 
     // Accesseurs synchro animation
     public int getEatAnimTick() { return this.entityData.get(EAT_ANIM_TICK); }
     public void setEatAnimTick(int tick) { this.entityData.set(EAT_ANIM_TICK, tick); }
-    public float getAttackAnimSync() { return this.entityData.get(ATTACK_ANIM_SYNC); }
+    public int getSwingAnimTick() { return this.entityData.get(SWING_ANIM_TICK); }
+
+    /** Déclenche l'animation de swing (harvest, attaque…). Durée fixe 10 ticks. */
+    public void triggerSwingAnim() {
+        if (!this.level().isClientSide()) {
+            this.entityData.set(SWING_ANIM_TICK, 10);
+        }
+    }
 
     // Suppression : retire du tab list + message de déconnexion
     @Override
@@ -1146,11 +1153,23 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             }
         }
 
-        super.tick(); // updateSwingAnim() est appelé ici → attackAnim mis à jour
+        super.tick();
 
-        // Sync APRÈS super.tick() pour capturer la valeur fully-updated
+        // Décrémenter le compteur de swing chaque tick serveur
         if (!level().isClientSide()) {
-            this.entityData.set(ATTACK_ANIM_SYNC, this.getAttackAnim(1.0F));
+            int swing = this.entityData.get(SWING_ANIM_TICK);
+            if (swing > 0) {
+                this.entityData.set(SWING_ANIM_TICK, swing - 1);
+            }
         }
+    }
+
+    @Override
+    public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
+        boolean result = super.doHurtTarget(level, target);
+        if (result) {
+            triggerSwingAnim();
+        }
+        return result;
     }
 }

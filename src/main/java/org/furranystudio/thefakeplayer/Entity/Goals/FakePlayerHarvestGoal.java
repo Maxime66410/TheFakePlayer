@@ -59,15 +59,10 @@ public class FakePlayerHarvestGoal extends Goal {
 
         harvestTick++;
 
-        // Swing du bras calé sur la durée d'animation (~10 ticks avec ATTACK_SPEED=2)
-        if (harvestTick % 8 == 0) {
-            entity.swing(InteractionHand.MAIN_HAND);
-        }
-
         if (harvestTick >= HARVEST_DELAY) {
             BlockState state = entity.level().getBlockState(targetCrop);
             if (state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
-                entity.swing(InteractionHand.MAIN_HAND);
+                entity.triggerSwingAnim();
                 entity.level().destroyBlock(targetCrop, true, entity);
                 // Replanter avec l'état initial de la culture
                 if (entity.level().getBlockState(targetCrop).isAir()) {
