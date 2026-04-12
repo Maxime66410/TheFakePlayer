@@ -50,9 +50,7 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.Pig;
-import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
@@ -80,7 +78,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCarrier {
+public class FakePlayerEntity extends PathfinderMob implements NeutralMob, InventoryCarrier {
 
     // Attributs - Variables
     private static final UniformInt PERSISTENT_ANGER_TIME = TimeUtil.rangeOfSeconds(20, 39);
@@ -143,34 +141,34 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
 
 
     // Constructeurs
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world) {
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world) {
         super(entityType, world);
     }
 
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, String playerName)
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world, String playerName)
     {
         super(entityType, world);
         UpdateEntityProfile(playerName);
         this.setCanPickUpLoot(true);
     }
 
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z) {
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world, double x, double y, double z) {
         super(entityType, world);
         this.setPos(x, y, z);
     }
 
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, double x, double y, double z, String playerName) {
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world, double x, double y, double z, String playerName) {
         super(entityType, world);
         this.setPos(x, y, z);
         UpdateEntityProfile(playerName);
     }
 
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos) {
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world, BlockPos pos) {
         super(entityType, world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
     }
 
-    public FakePlayerEntity(EntityType<? extends Animal> entityType, Level world, BlockPos pos, String playerName) {
+    public FakePlayerEntity(EntityType<? extends PathfinderMob> entityType, Level world, BlockPos pos, String playerName) {
         super(entityType, world);
         this.setPos(pos.getX(), pos.getY(), pos.getZ());
         UpdateEntityProfile(playerName);
@@ -700,22 +698,13 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     }
 
     public static boolean canSpawn(EntityType<? extends FakePlayerEntity> p_223365_, LevelAccessor p_223366_, EntitySpawnReason p_223367_, BlockPos p_223368_, RandomSource p_223369_) {
-        return Animal.checkAnimalSpawnRules(p_223365_, p_223366_, p_223367_, p_223368_, p_223369_);
+        return Mob.checkMobSpawnRules(p_223365_, p_223366_, p_223367_, p_223368_, p_223369_);
     }
 
     public boolean canBreakDoors() {
         return true;
     }
 
-    @Override
-    public @Nullable AgeableMob getBreedOffspring(ServerLevel p_146743_, AgeableMob p_146744_) {
-        return null;
-    }
-
-    @Override
-    public boolean isFood(ItemStack p_27600_) {
-        return false;
-    }
 
     @Override
     public int getRemainingPersistentAngerTime() {
