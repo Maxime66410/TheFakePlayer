@@ -16,7 +16,7 @@ public class FakePlayerHarvestGoal extends Goal {
     private BlockPos targetCrop = null;
     private int harvestTick = 0;
     private int cooldown = 0;
-    private static final int HARVEST_DELAY = 10;   // ~0.5s, les cultures se cassent très vite
+    private static final int HARVEST_DELAY = 5;    // ~0.25s, culture se casse quasi instantanément
     private static final int SEARCH_RANGE = 8;
     private static final int COOLDOWN_TICKS = 100; // 5s si aucune culture trouvée
 
@@ -59,10 +59,9 @@ public class FakePlayerHarvestGoal extends Goal {
 
         harvestTick++;
 
-        // Animation progressive de cassage (craquelures sur le bloc)
-        if (entity.level() instanceof ServerLevel serverLevel) {
-            int progress = (int) ((harvestTick / (float) HARVEST_DELAY) * 9);
-            serverLevel.destroyBlockProgress(entity.getId(), targetCrop, progress);
+        // Swing du bras toutes les 3 ticks pour simuler la frappe
+        if (harvestTick % 3 == 0) {
+            entity.swing(InteractionHand.MAIN_HAND);
         }
 
         if (harvestTick >= HARVEST_DELAY) {

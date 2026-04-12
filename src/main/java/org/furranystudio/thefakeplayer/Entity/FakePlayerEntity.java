@@ -101,6 +101,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int ticksUsingItem;
     public boolean isCrouching;
     public double speedValue;
+    public int eatAnimTick = 0; // exposé pour l'animation de mastication côté client
 
     // Tab list / chat
     private boolean hasTabListEntry = false;

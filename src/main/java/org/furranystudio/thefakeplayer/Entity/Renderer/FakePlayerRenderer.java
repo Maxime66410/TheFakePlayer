@@ -51,6 +51,9 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
         super.extractRenderState(entity, renderState, partialTick);
         if (renderState instanceof HumanoidRenderState humanoidState) {
             humanoidState.attackTime = entity.getAttackAnim(partialTick);
+            humanoidState.ticksUsingItem = entity.eatAnimTick;
+            humanoidState.isUsingItem = entity.eatAnimTick > 0;
+            humanoidState.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
         }
         // Populate held items so ItemInHandLayer can render them
         ArmedEntityRenderState.extractArmedEntityRenderState(entity, renderState, this.itemModelResolver);
