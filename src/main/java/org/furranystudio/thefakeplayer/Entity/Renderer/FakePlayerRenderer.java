@@ -8,6 +8,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
@@ -37,6 +38,7 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
         super(p_174169_, new FakePlayerModelWithAnim<>(p_174169_.bakeLayer(FakePlayerModelWithAnim.LAYER_LOCATION)), 0.5F);
+        this.addLayer(new ItemInHandLayer<>(this));
     }
 
     @Override
@@ -50,6 +52,15 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
         if (renderState instanceof HumanoidRenderState humanoidState) {
             humanoidState.attackTime = entity.getAttackAnim(partialTick);
         }
+        // Populate held items so ItemInHandLayer can render them
+        ArmedEntityRenderState.extractArmedEntityRenderState(entity, renderState, this.itemModelResolver);
+        // Arm poses based on entity hand items
+        renderState.rightArmPose = entity.getMainHandItem().isEmpty()
+                ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+        renderState.leftArmPose = entity.getOffhandItem().isEmpty()
+                ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.furranystudio.thefakeplayer.Entity.Renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.AnimationUtils;
+import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -22,7 +23,7 @@ import org.furranystudio.thefakeplayer.Entity.Anim.FakePlayerAnimList;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 
-public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityModel<ArmedEntityRenderState> {
+public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityModel<ArmedEntityRenderState> implements ArmedModel {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "fakeplayermodel"), "main");
 
@@ -71,10 +72,26 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 			this.getParts().leftLeg.zRot = -0.005F;
 		}
 
+		// Arm poses (item held)
+		if (humanoidmodel$armposeright == HumanoidModel.ArmPose.ITEM) {
+			this.getParts().rightArm.xRot = this.getParts().rightArm.xRot * 0.5F - (float)(Math.PI / 10);
+			this.getParts().rightArm.yRot = 0.0F;
+		}
+		if (humanoidmodel$armposeleft == HumanoidModel.ArmPose.ITEM) {
+			this.getParts().leftArm.xRot = this.getParts().leftArm.xRot * 0.5F - (float)(Math.PI / 10);
+			this.getParts().leftArm.yRot = 0.0F;
+		}
+
 		// Attack / swing animation
 		if (p_370046_ instanceof HumanoidRenderState humanoidState && humanoidState.attackTime > 0.0F) {
 			this.setupAttackAnimation(p_370046_, humanoidState.attackTime);
 		}
+	}
+
+	@Override
+	public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
+		ModelPart handPart = arm == HumanoidArm.RIGHT ? this.getParts().rightArm : this.getParts().leftArm;
+		handPart.translateAndRotate(poseStack);
 	}
 
 

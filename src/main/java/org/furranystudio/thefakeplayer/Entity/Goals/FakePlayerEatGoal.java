@@ -17,7 +17,7 @@ public class FakePlayerEatGoal extends Goal {
     private final FakePlayerEntity entity;
     private ItemStack foodStack = ItemStack.EMPTY;
     private int eatTicks = 0;
-    private static final int EAT_DURATION = 32; // ~1.6s comme un vrai joueur
+    private static final int EAT_DURATION = 20; // ~1s comme un vrai joueur
 
     public FakePlayerEatGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -40,6 +40,7 @@ public class FakePlayerEatGoal extends Goal {
     @Override
     public void start() {
         eatTicks = 0;
+        entity.setItemInHand(InteractionHand.MAIN_HAND, foodStack.copy());
         entity.swing(InteractionHand.MAIN_HAND);
     }
 
@@ -47,10 +48,22 @@ public class FakePlayerEatGoal extends Goal {
     public void tick() {
         eatTicks++;
 
-        // Son de mastication toutes les 3 ticks
-        if (eatTicks % 3 == 0) {
+        // Son de mastication + swing + particules toutes les 4 ticks pendant l'animation
+        if (eatTicks % 4 == 0) {
             entity.playSound(SoundEvents.GENERIC_EAT.value(), 0.5F,
                     0.9F + entity.level().random.nextFloat() * 0.2F);
+            entity.swing(InteractionHand.MAIN_HAND);
+
+            // Particules pendant la mastication (serveur uniquement)
+            if (!foodStack.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                var particleData = new ItemParticleOption(ParticleTypes.ITEM, foodStack);
+                double vx = (entity.level().random.nextFloat() - 0.5) * 0.2;
+                double vy = entity.level().random.nextFloat() * 0.1 + 0.05;
+                double vz = (entity.level().random.nextFloat() - 0.5) * 0.2;
+                serverLevel.sendParticles(particleData,
+                        entity.getX(), entity.getY() + entity.getEyeHeight() - 0.3,
+                        entity.getZ(), 1, vx, vy, vz, 0.0);
+            }
         }
 
         if (eatTicks >= EAT_DURATION) {
@@ -84,6 +97,7 @@ public class FakePlayerEatGoal extends Goal {
     public void stop() {
         eatTicks = 0;
         foodStack = ItemStack.EMPTY;
+        entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
 
     private ItemStack findFood() {
