@@ -50,8 +50,8 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
     public void extractRenderState(FakePlayerEntity entity, ArmedEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
         if (renderState instanceof HumanoidRenderState humanoidState) {
-            // attackTime depuis entity data synchro (10 = début, 0 = fin)
-            humanoidState.attackTime = entity.getSwingAnimTick() / 10.0F;
+            // attackTime depuis entity data synchro — 0.0→1.0 (setupAttackAnimation attend count-up)
+            humanoidState.attackTime = (10 - entity.getSwingAnimTick()) / 10.0F;
             // Eating : lu depuis entity data (synchro serveur → client)
             int eatTick = entity.getEatAnimTick();
             humanoidState.ticksUsingItem = eatTick;

@@ -1155,11 +1155,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         super.tick();
 
-        // Décrémenter le compteur de swing chaque tick serveur
+        // Décrémenter le compteur de swing (2 par tick → 5 ticks total = 0.25s)
         if (!level().isClientSide()) {
             int swing = this.entityData.get(SWING_ANIM_TICK);
             if (swing > 0) {
-                this.entityData.set(SWING_ANIM_TICK, swing - 1);
+                this.entityData.set(SWING_ANIM_TICK, Math.max(0, swing - 2));
             }
         }
     }

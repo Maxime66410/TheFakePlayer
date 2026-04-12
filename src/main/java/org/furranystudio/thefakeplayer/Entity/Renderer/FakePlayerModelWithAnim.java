@@ -84,7 +84,7 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 
 		// Eating animation — bras vers le visage avec bob rythmique
 		if (p_370046_ instanceof HumanoidRenderState hs && hs.isUsingItem && hs.ticksUsingItem > 0) {
-			float eatBob = Mth.sin(hs.ticksUsingItem * 0.5F) * 0.1F;
+			float eatBob = Mth.sin(hs.ticksUsingItem * 1.0F) * 0.12F;
 			this.getParts().rightArm.xRot = -1.4F + eatBob;
 			this.getParts().rightArm.yRot = -0.2F;
 			this.getParts().rightArm.zRot = 0.0F;
