@@ -101,7 +101,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int ticksUsingItem;
     public boolean isCrouching;
     public double speedValue;
-    public int eatAnimTick = 0; // exposé pour l'animation de mastication côté client
 
     // Tab list / chat
     private boolean hasTabListEntry = false;
@@ -118,6 +117,12 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     private static final EntityDataAccessor<String> SKIN_URL =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.STRING);
     private String lastSkinUrl = "";
+
+    // EntityData pour synchroniser les animations serveur → clients
+    private static final EntityDataAccessor<Integer> EAT_ANIM_TICK =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> ATTACK_ANIM_SYNC =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.FLOAT);
 
     private static final String[] CHAT_MESSAGES = {
         "lol",
@@ -213,7 +218,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(SKIN_URL, "");
+        builder.define(EAT_ANIM_TICK, 0);
+        builder.define(ATTACK_ANIM_SYNC, 0.0F);
     }
+
+    // Accesseurs synchro animation
+    public int getEatAnimTick() { return this.entityData.get(EAT_ANIM_TICK); }
+    public void setEatAnimTick(int tick) { this.entityData.set(EAT_ANIM_TICK, tick); }
+    public float getAttackAnimSync() { return this.entityData.get(ATTACK_ANIM_SYNC); }
 
     // Suppression : retire du tab list + message de déconnexion
     @Override
@@ -431,7 +443,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                 .add(Attributes.ATTACK_DAMAGE, 1.0D)
                 .add(Attributes.FOLLOW_RANGE, 32.0D)
                 .add(Attributes.ATTACK_KNOCKBACK, 1.0D)
-                .add(Attributes.ATTACK_SPEED, 4.0D)
+                .add(Attributes.ATTACK_SPEED, 2.0D)
                 .add(Attributes.ARMOR, 0.0D)
                 .add(Attributes.ARMOR_TOUGHNESS, 0.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.0D)
@@ -1134,6 +1146,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             }
         }
 
-        super.tick();
+        super.tick(); // updateSwingAnim() est appelé ici → attackAnim mis à jour
+
+        // Sync APRÈS super.tick() pour capturer la valeur fully-updated
+        if (!level().isClientSide()) {
+            this.entityData.set(ATTACK_ANIM_SYNC, this.getAttackAnim(1.0F));
+        }
     }
 }

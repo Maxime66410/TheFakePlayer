@@ -50,9 +50,12 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
     public void extractRenderState(FakePlayerEntity entity, ArmedEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
         if (renderState instanceof HumanoidRenderState humanoidState) {
+            // attackTime : lu directement sur l'entité client (mis à jour par ClientboundAnimatePacket)
             humanoidState.attackTime = entity.getAttackAnim(partialTick);
-            humanoidState.ticksUsingItem = entity.eatAnimTick;
-            humanoidState.isUsingItem = entity.eatAnimTick > 0;
+            // Eating : lu depuis entity data (synchro serveur → client)
+            int eatTick = entity.getEatAnimTick();
+            humanoidState.ticksUsingItem = eatTick;
+            humanoidState.isUsingItem = eatTick > 0;
             humanoidState.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
         }
         // Populate held items so ItemInHandLayer can render them

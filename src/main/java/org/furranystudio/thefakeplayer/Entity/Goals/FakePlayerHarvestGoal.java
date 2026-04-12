@@ -59,8 +59,8 @@ public class FakePlayerHarvestGoal extends Goal {
 
         harvestTick++;
 
-        // Swing du bras toutes les 3 ticks pour simuler la frappe
-        if (harvestTick % 3 == 0) {
+        // Swing du bras calé sur la durée d'animation (~10 ticks avec ATTACK_SPEED=2)
+        if (harvestTick % 8 == 0) {
             entity.swing(InteractionHand.MAIN_HAND);
         }
 

@@ -40,14 +40,14 @@ public class FakePlayerEatGoal extends Goal {
     @Override
     public void start() {
         eatTicks = 0;
-        entity.eatAnimTick = 0;
+        entity.setEatAnimTick(0);
         entity.setItemInHand(InteractionHand.MAIN_HAND, foodStack.copy());
     }
 
     @Override
     public void tick() {
         eatTicks++;
-        entity.eatAnimTick = eatTicks; // expose pour l'animation côté client
+        entity.setEatAnimTick(eatTicks); // synchronisé vers clients via EntityData
 
         // Son de mastication + particules toutes les 4 ticks pendant l'animation
         if (eatTicks % 4 == 0) {
@@ -96,7 +96,7 @@ public class FakePlayerEatGoal extends Goal {
     @Override
     public void stop() {
         eatTicks = 0;
-        entity.eatAnimTick = 0;
+        entity.setEatAnimTick(0);
         foodStack = ItemStack.EMPTY;
         entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
