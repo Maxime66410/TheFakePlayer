@@ -105,6 +105,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
     // Tab list / chat
     private boolean hasTabListEntry = false;
     private boolean initialized = false;
+    private boolean profileReady = false; // true quand nom+skin sont chargés (thread terminé)
     private int chatTimer = 20 * 60 * 3; // premier message après 3 minutes
 
     // Skin Mojang brut (base64 value + signature pour GameProfile)
@@ -357,58 +358,79 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
         this.setCanPickUpLoot(true);
     }
 
-    // Update the entity's profile
+    // Update the entity's profile — HTTP sur thread séparé pour ne pas bloquer le serveur
     private void UpdateEntityProfile()
     {
-        if (hasInternetConnection()) {
-            int maxAttempts = 5;
-            for (int attempt = 0; attempt < maxAttempts; attempt++) {
-                try {
+        // Pas de nom affiché tant que le profil n'est pas chargé
+        new Thread(() -> {
+            try {
+                if (!hasInternetConnection()) {
+                    this.level().getServer().execute(() -> {
+                        this.setCustomName(Component.literal("Steve"));
+                        profileReady = true;
+                        if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
+                    });
+                    return;
+                }
+                for (int attempt = 0; attempt < 5; attempt++) {
                     String playerName = getRandomName();
                     String playerUUID = getUUIDFromName(playerName);
                     if (playerUUID == null) continue;
-                    // Un seul appel getSkinProperty — évite le double-fetch qui déclenche le rate-limit Mojang
                     String[] skinData = getSkinProperty(playerUUID);
                     if (skinData == null) continue;
 
-                    this.setCustomName(Component.literal(playerName));
-                    setEntityName(playerName);
-                    setEntityUUID(playerUUID);
-                    applySkin(playerName, skinData);
+                    final String finalName = playerName;
+                    final String finalUUID = playerUUID;
+                    final String[] finalSkinData = skinData;
+                    this.level().getServer().execute(() -> {
+                        this.setCustomName(Component.literal(finalName));
+                        setEntityName(finalName);
+                        setEntityUUID(finalUUID);
+                        profileReady = true;
+                        applySkin(finalName, finalSkinData);
+                        // Si tick() n'a pas encore ajouté au tab, on le fait maintenant
+                        if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
+                    });
                     return;
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+                // Fallback : aucun nom valide en 5 tentatives
+                this.level().getServer().execute(() -> {
+                    this.setCustomName(Component.literal("Steve"));
+                    profileReady = true;
+                    if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            // Fallback si aucun nom valide trouvé en 5 tentatives
-            this.setCustomName(Component.literal("Steve"));
-        }
-        else {
-            this.setCustomName(Component.literal("Steve"));
-        }
+        }, "FakePlayer-SkinLoader").start();
     }
 
     private void UpdateEntityProfile(String playerName)
     {
-        if (hasInternetConnection()) {
+        // Nom connu immédiatement → profileReady = true pour que tick() puisse broadcaster le join tout de suite
+        this.setCustomName(Component.literal(playerName));
+        profileReady = true;
+        new Thread(() -> {
             try {
+                if (!hasInternetConnection()) return;
                 String playerUUID = getUUIDFromName(playerName);
-                if (playerUUID == null) { this.setCustomName(Component.literal("Steve")); return; }
-                // Un seul appel getSkinProperty — évite le double-fetch qui déclenche le rate-limit Mojang
+                if (playerUUID == null) return;
                 String[] skinData = getSkinProperty(playerUUID);
-                if (skinData == null) { this.setCustomName(Component.literal("Steve")); return; }
+                if (skinData == null) return;
 
-                this.setCustomName(Component.literal(playerName));
-                setEntityName(playerName);
-                setEntityUUID(playerUUID);
-                applySkin(playerName, skinData);
+                final String finalUUID = playerUUID;
+                final String[] finalSkinData = skinData;
+                this.level().getServer().execute(() -> {
+                    setEntityName(playerName);
+                    setEntityUUID(finalUUID);
+                    applySkin(playerName, finalSkinData);
+                    // Si tick() n'a pas encore ajouté au tab (très rare), on le fait maintenant
+                    if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        else {
-            this.setCustomName(Component.literal("Steve"));
-        }
+        }, "FakePlayer-SkinLoader").start();
     }
 
     // Create the entity's attributes
@@ -628,8 +650,10 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             // Synchroniser l'URL du skin vers tous les clients via EntityData (MC vanilla)
             this.entityData.set(SKIN_URL, skinUrl);
 
-            // Si déjà dans le tab list, re-envoyer le packet avec la texture à jour
+            // Si déjà dans le tab list, remove + readd pour forcer le client à accepter le nouveau profil
+            // (ADD_PLAYER pour un UUID existant est ignoré par le client)
             if (hasTabListEntry) {
+                removeFromTabList();
                 addToTabList();
             }
         } catch (IOException e) {
@@ -1045,6 +1069,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
             String sig = p_34446_.getString("SkinTextureSignature");
             skinTextureSignature = sig.isEmpty() ? null : sig;
             skinUrl = p_34446_.getString("SkinUrl");
+            profileReady = true; // Profil restauré depuis NBT, pas besoin d'attendre le thread
             if (!skinUrl.isEmpty()) {
                 this.entityData.set(SKIN_URL, skinUrl);
             }
@@ -1114,7 +1139,7 @@ public class FakePlayerEntity extends Animal implements NeutralMob, InventoryCar
                 org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderer.updateTextureFromURL(skinUrl);
             }
         } else {
-            if (!initialized) {
+            if (!initialized && profileReady) {
                 initialized = true;
                 if (!hasTabListEntry) {
                     addToTabList();
