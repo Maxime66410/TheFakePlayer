@@ -332,12 +332,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             return true;
         })); // Permet de casser les portes
         this.goalSelector.addGoal(2, new OpenDoorGoal(this, true)); // Permet d'ouvrir les portes
-        this.goalSelector.addGoal(4, new JumpGoal() {
-            @Override
-            public boolean canUse() {
-                return true;
-            }
-        });
         this.goalSelector.addGoal(5, new PanicGoal(this, 1.25D)); // Permet de paniquer
         this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
