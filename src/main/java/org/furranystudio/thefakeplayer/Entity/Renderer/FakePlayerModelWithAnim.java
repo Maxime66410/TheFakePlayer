@@ -11,6 +11,7 @@ import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -68,6 +69,11 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 			this.getParts().leftLeg.yRot = -0.005F;
 			this.getParts().rightLeg.zRot = 0.005F;
 			this.getParts().leftLeg.zRot = -0.005F;
+		}
+
+		// Attack / swing animation
+		if (p_370046_ instanceof HumanoidRenderState humanoidState && humanoidState.attackTime > 0.0F) {
+			this.setupAttackAnimation(p_370046_, humanoidState.attackTime);
 		}
 	}
 

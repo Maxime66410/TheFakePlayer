@@ -16,7 +16,7 @@ public class FakePlayerHarvestGoal extends Goal {
     private BlockPos targetCrop = null;
     private int harvestTick = 0;
     private int cooldown = 0;
-    private static final int HARVEST_DELAY = 60;   // 3s de cassage
+    private static final int HARVEST_DELAY = 15;   // ~0.75s, les cultures se cassent très vite
     private static final int SEARCH_RANGE = 8;
     private static final int COOLDOWN_TICKS = 100; // 5s si aucune culture trouvée
 

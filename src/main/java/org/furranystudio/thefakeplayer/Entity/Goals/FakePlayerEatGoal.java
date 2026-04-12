@@ -1,6 +1,9 @@
 package org.furranystudio.thefakeplayer.Entity.Goals;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ItemParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -18,7 +21,7 @@ public class FakePlayerEatGoal extends Goal {
 
     public FakePlayerEatGoal(FakePlayerEntity entity) {
         this.entity = entity;
-        // Flags vides : le goal tourne librement sans bloquer ni être bloqué par d'autres goals
+        // Flags vides : tourne librement sans bloquer ni être bloqué
         this.setFlags(EnumSet.noneOf(Flag.class));
     }
 
@@ -44,8 +47,8 @@ public class FakePlayerEatGoal extends Goal {
     public void tick() {
         eatTicks++;
 
-        // Son de repas toutes les 4 ticks pendant la mangée
-        if (eatTicks % 4 == 0) {
+        // Son de mastication toutes les 3 ticks
+        if (eatTicks % 3 == 0) {
             entity.playSound(SoundEvents.GENERIC_EAT.value(), 0.5F,
                     0.9F + entity.level().random.nextFloat() * 0.2F);
         }
@@ -53,8 +56,26 @@ public class FakePlayerEatGoal extends Goal {
         if (eatTicks >= EAT_DURATION) {
             var food = foodStack.get(DataComponents.FOOD);
             if (food != null) {
+                ItemStack particleStack = foodStack.copy(); // save before shrink
                 entity.heal(food.nutrition());
                 foodStack.shrink(1);
+
+                // Son de fin de repas (rot)
+                entity.playSound(SoundEvents.PLAYER_BURP, 0.5F,
+                        0.9F + entity.level().random.nextFloat() * 0.2F);
+
+                // Particules d'item autour de la tête
+                if (entity.level() instanceof ServerLevel serverLevel) {
+                    var particleData = new ItemParticleOption(ParticleTypes.ITEM, particleStack);
+                    for (int i = 0; i < 8; i++) {
+                        double vx = (entity.level().random.nextFloat() - 0.5) * 0.3;
+                        double vy = entity.level().random.nextFloat() * 0.2 + 0.1;
+                        double vz = (entity.level().random.nextFloat() - 0.5) * 0.3;
+                        serverLevel.sendParticles(particleData,
+                                entity.getX(), entity.getY() + entity.getEyeHeight() - 0.2,
+                                entity.getZ(), 1, vx, vy, vz, 0.0);
+                    }
+                }
             }
         }
     }

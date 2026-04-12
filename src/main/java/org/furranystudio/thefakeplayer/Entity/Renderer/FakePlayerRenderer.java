@@ -45,6 +45,14 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
     }
 
     @Override
+    public void extractRenderState(FakePlayerEntity entity, ArmedEntityRenderState renderState, float partialTick) {
+        super.extractRenderState(entity, renderState, partialTick);
+        if (renderState instanceof HumanoidRenderState humanoidState) {
+            humanoidState.attackTime = entity.getAttackAnim(partialTick);
+        }
+    }
+
+    @Override
     public ResourceLocation getTextureLocation(ArmedEntityRenderState p_362468_) {
         return TEXTURE;
     }
