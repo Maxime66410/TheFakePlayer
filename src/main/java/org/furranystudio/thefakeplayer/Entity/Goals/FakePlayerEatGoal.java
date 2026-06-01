@@ -16,6 +16,7 @@ public class FakePlayerEatGoal extends Goal {
 
     private final FakePlayerEntity entity;
     private ItemStack foodStack = ItemStack.EMPTY;
+    private ItemStack savedMainHand = ItemStack.EMPTY;
     private int eatTicks = 0;
     private static final int EAT_DURATION = 20; // ~1s comme un vrai joueur
 
@@ -27,7 +28,11 @@ public class FakePlayerEatGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (entity.getHealth() >= entity.getMaxHealth()) return false;
+        float health = entity.getHealth();
+        float maxHealth = entity.getMaxHealth();
+        // En combat : mange uniquement si vie ≤ 20%
+        if (entity.getTarget() != null && health > maxHealth * 0.2f) return false;
+        if (health >= maxHealth) return false;
         foodStack = findFood();
         return !foodStack.isEmpty();
     }
@@ -41,6 +46,7 @@ public class FakePlayerEatGoal extends Goal {
     public void start() {
         eatTicks = 0;
         entity.setEatAnimTick(0);
+        savedMainHand = entity.getMainHandItem().copy();
         entity.setItemInHand(InteractionHand.MAIN_HAND, foodStack.copy());
     }
 
@@ -98,7 +104,8 @@ public class FakePlayerEatGoal extends Goal {
         eatTicks = 0;
         entity.setEatAnimTick(0);
         foodStack = ItemStack.EMPTY;
-        entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        entity.setItemInHand(InteractionHand.MAIN_HAND, savedMainHand);
+        savedMainHand = ItemStack.EMPTY;
     }
 
     private ItemStack findFood() {

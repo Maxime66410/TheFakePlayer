@@ -52,6 +52,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCraftGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -104,6 +105,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int ticksUsingItem;
     public boolean isCrouching;
     public double speedValue;
+    public int shieldCooldown = 0;
 
     // Tab list / chat
     private boolean hasTabListEntry = false;
@@ -355,13 +357,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         // Add goals to the entity
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
+        this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true)); // Permet d'attaquer le joueur
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true)); // Permet d'attaquer le joueur
         this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
             return true;
         })); // Permet de casser les portes
@@ -694,25 +697,35 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     @Override
-    protected void actuallyHurt(ServerLevel p_364204_, DamageSource p_328294_, float p_327706_) {
-        super.actuallyHurt(p_364204_, p_328294_, p_327706_);
-
-        Entity attacker = p_328294_.getEntity();
-        if (attacker instanceof LivingEntity) {
-            this.setTarget((LivingEntity) p_328294_.getEntity());
+    protected void actuallyHurt(ServerLevel level, DamageSource source, float amount) {
+        // Vanilla a déjà mis amount=0 si isDamageSourceBlocked()=true — on check isBlocking() directement
+        if (this.isBlocking()) {
+            Entity attacker = source.getDirectEntity();
+            boolean piercing = attacker instanceof net.minecraft.world.entity.projectile.AbstractArrow arr
+                    && arr.getPierceLevel() > 0;
+            if (!piercing) {
+                this.playSound(net.minecraft.sounds.SoundEvents.SHIELD_BLOCK, 1.0F,
+                        0.8F + this.random.nextFloat() * 0.4F);
+                if (attacker instanceof LivingEntity le) {
+                    this.setTarget(le);
+                }
+                return;
+            }
         }
 
-        // If the entity is dead or dying, remove it
+        super.actuallyHurt(level, source, amount);
+
+        Entity attacker = source.getEntity();
+        if (attacker instanceof LivingEntity le) {
+            this.setTarget(le);
+        }
+
         if (this.isDeadOrDying()) {
-            // Give effect slowness and blindness
-
-            if(attacker instanceof LivingEntity) {
-                ((LivingEntity) attacker).addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 10));
-                ((LivingEntity) attacker).addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
+            if (attacker instanceof LivingEntity le) {
+                le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 10));
+                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
             }
-
-            dropCustomDeathLoot(p_364204_, p_328294_, true);
-
+            dropCustomDeathLoot(level, source, true);
             this.remove(RemovalReason.DISCARDED);
         }
     }
@@ -1175,15 +1188,48 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             if (swing > 0) {
                 this.entityData.set(SWING_ANIM_TICK, Math.max(0, swing - 2));
             }
+            if (shieldCooldown > 0) {
+                shieldCooldown--;
+            }
         }
     }
 
     @Override
     public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
+        if (this.isUsingItem() && this.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem) {
+            this.stopUsingItem();
+        }
+        this.shieldCooldown = 25;
         boolean result = super.doHurtTarget(level, target);
         if (result) {
             triggerSwingAnim();
         }
         return result;
+    }
+
+    @Override
+    public boolean isBlocking() {
+        return this.isUsingItem() && this.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem;
+    }
+
+    @Override
+    public void animateHurt(float yaw) {
+        if (!this.isBlocking()) {
+            super.animateHurt(yaw);
+        }
+    }
+
+    @Override
+    public boolean isDamageSourceBlocked(DamageSource source) {
+        if (!this.isBlocking()) return false;
+        if (source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.AbstractArrow arr
+                && arr.getPierceLevel() > 0) return false;
+        return true;
+    }
+
+    @Override
+    protected void blockUsingShield(LivingEntity attacker) {
+        // Intentionnellement vide : vanilla appellerait attacker.blockedByShield(this)
+        // qui finit par appeler this.stopUsingItem() et coupe notre shield
     }
 }
