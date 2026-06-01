@@ -5,9 +5,11 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -38,6 +40,11 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
 
     public FakePlayerRenderer(EntityRendererProvider.Context p_174169_) {
         super(p_174169_, new FakePlayerModelWithAnim<>(p_174169_.bakeLayer(FakePlayerModelWithAnim.LAYER_LOCATION)), 0.5F);
+        this.addLayer(new FakePlayerArmorLayer(this,
+            new HumanoidModel<HumanoidRenderState>(p_174169_.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
+            new HumanoidModel<HumanoidRenderState>(p_174169_.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
+            p_174169_.getEquipmentRenderer()
+        ));
         this.addLayer(new ItemInHandLayer<>(this));
     }
 
@@ -50,7 +57,9 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
     public void extractRenderState(FakePlayerEntity entity, ArmedEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
         if (renderState instanceof HumanoidRenderState humanoidState) {
-            // attackTime interpolé côté client pour lisser les saccades à 60fps
+            // Peuple headEquipment/chestEquipment/legsEquipment/feetEquipment + données humanoid de base
+            HumanoidMobRenderer.extractHumanoidRenderState(entity, humanoidState, partialTick, this.itemModelResolver);
+            // Swing interpolé côté client pour lisser les saccades à 60fps
             humanoidState.attackTime = entity.oSwingAnimFrac + (entity.swingAnimFrac - entity.oSwingAnimFrac) * partialTick;
             // Eating : lu depuis entity data (synchro serveur → client)
             int eatTick = entity.getEatAnimTick();
@@ -58,8 +67,6 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             humanoidState.isUsingItem = eatTick > 0;
             humanoidState.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
         }
-        // Populate held items so ItemInHandLayer can render them
-        ArmedEntityRenderState.extractArmedEntityRenderState(entity, renderState, this.itemModelResolver);
         // Arm poses based on entity hand items
         renderState.rightArmPose = entity.getMainHandItem().isEmpty()
                 ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY

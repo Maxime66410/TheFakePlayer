@@ -138,6 +138,13 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
         return parts;
     }
 
+    public ModelPart headPart()     { return parts.head; }
+    public ModelPart torsoPart()    { return parts.torso; }
+    public ModelPart rightArmPart() { return parts.rightArm; }
+    public ModelPart leftArmPart()  { return parts.leftArm; }
+    public ModelPart rightLegPart() { return parts.rightLeg; }
+    public ModelPart leftLegPart()  { return parts.leftLeg; }
+
 	/*@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
 
