@@ -82,12 +82,20 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 			this.getParts().leftArm.yRot = 0.0F;
 		}
 
-		// Eating animation — bras vers le visage avec bob rythmique
-		if (p_370046_ instanceof HumanoidRenderState hs && hs.isUsingItem && hs.ticksUsingItem > 0) {
+		// Eating animation — bras vers le visage avec bob rythmique (MAIN_HAND uniquement)
+		if (p_370046_ instanceof HumanoidRenderState hs && hs.isUsingItem && hs.ticksUsingItem > 0
+				&& hs.useItemHand == net.minecraft.world.InteractionHand.MAIN_HAND) {
 			float eatBob = Mth.sin(hs.ticksUsingItem * 1.0F) * 0.12F;
 			this.getParts().rightArm.xRot = -1.4F + eatBob;
 			this.getParts().rightArm.yRot = -0.2F;
 			this.getParts().rightArm.zRot = 0.0F;
+		}
+
+		// Shield en offhand — avancer légèrement le bras gauche devant l'entité
+		if (p_370046_ instanceof HumanoidRenderState hs && hs.isUsingItem
+				&& hs.useItemHand == net.minecraft.world.InteractionHand.OFF_HAND) {
+			this.getParts().leftArm.xRot -= 0.4F;
+			this.getParts().leftArm.yRot = 0.3F;
 		}
 
 		// Attack / swing animation

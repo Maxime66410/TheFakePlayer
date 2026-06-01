@@ -63,9 +63,12 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             humanoidState.attackTime = entity.oSwingAnimFrac + (entity.swingAnimFrac - entity.oSwingAnimFrac) * partialTick;
             // Eating : lu depuis entity data (synchro serveur → client)
             int eatTick = entity.getEatAnimTick();
-            humanoidState.ticksUsingItem = eatTick;
-            humanoidState.isUsingItem = eatTick > 0;
-            humanoidState.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
+            if (eatTick > 0) {
+                humanoidState.ticksUsingItem = eatTick;
+                humanoidState.isUsingItem = true;
+                humanoidState.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
+            }
+            // Sinon on laisse les valeurs vanilla (isUsingItem/useItemHand pour le shield)
         }
         // Arm poses based on entity hand items
         renderState.rightArmPose = entity.getMainHandItem().isEmpty()
