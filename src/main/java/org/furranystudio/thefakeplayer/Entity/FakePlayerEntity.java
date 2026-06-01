@@ -47,6 +47,8 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerChestGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCraftGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
@@ -354,7 +356,9 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
+        this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
+        this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true)); // Permet d'attaquer le joueur

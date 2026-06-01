@@ -31,7 +31,7 @@ public class FakePlayerMineGoal extends Goal {
 
     private static final int SEARCH_RANGE = 8;
     private static final int COOLDOWN_MINED = 200;
-    private static final int COOLDOWN_NONE = 400;
+    private static final int COOLDOWN_NONE = 300;
     private static final float MAX_HARDNESS = 30.0f; // ancient debris = 30.0, obsidian = 50.0 (exclu)
 
     private static final Set<Block> STONE_BLOCKS = Set.of(
