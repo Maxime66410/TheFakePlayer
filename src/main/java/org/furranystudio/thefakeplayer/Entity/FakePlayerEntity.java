@@ -776,239 +776,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     @Override
     protected void dropCustomDeathLoot(ServerLevel p_345102_, DamageSource p_21385_, boolean p_21387_) {
         super.dropCustomDeathLoot(p_345102_, p_21385_, p_21387_);
-        // OLD RANDOM DROP LOOT //
-        /*List<Item> Lootitems = Arrays.asList(
-                Items.DIAMOND,
-                Items.GOLD_INGOT,
-                Items.IRON_INGOT,
-                Items.EMERALD,
-                Items.LAPIS_LAZULI,
-                Items.REDSTONE,
-                Items.COAL,
-                Items.QUARTZ,
-                Items.NETHERITE_SCRAP,
-                Items.NETHERITE_INGOT,
-                Items.NETHERITE_SWORD,
-                Items.NETHERITE_PICKAXE,
-                Items.NETHERITE_AXE,
-                Items.NETHERITE_SHOVEL,
-                Items.NETHERITE_HOE,
-                Items.NETHERITE_HELMET,
-                Items.NETHERITE_CHESTPLATE,
-                Items.NETHERITE_LEGGINGS,
-                Items.NETHERITE_BOOTS,
-                Items.DIAMOND_SWORD,
-                Items.DIAMOND_PICKAXE,
-                Items.DIAMOND_AXE,
-                Items.DIAMOND_SHOVEL,
-                Items.DIAMOND_HOE,
-                Items.DIAMOND_HELMET,
-                Items.DIAMOND_CHESTPLATE,
-                Items.DIAMOND_LEGGINGS,
-                Items.DIAMOND_BOOTS,
-                Items.GOLDEN_SWORD,
-                Items.GOLDEN_PICKAXE,
-                Items.GOLDEN_AXE,
-                Items.GOLDEN_SHOVEL,
-                Items.GOLDEN_HOE,
-                Items.GOLDEN_HELMET,
-                Items.GOLDEN_CHESTPLATE,
-                Items.GOLDEN_LEGGINGS,
-                Items.GOLDEN_BOOTS,
-                Items.IRON_SWORD,
-                Items.IRON_PICKAXE,
-                Items.IRON_AXE,
-                Items.IRON_SHOVEL,
-                Items.IRON_HOE,
-                Items.IRON_HELMET,
-                Items.IRON_CHESTPLATE,
-                Items.IRON_LEGGINGS,
-                Items.IRON_BOOTS,
-                Items.STONE_SWORD,
-                Items.STONE_PICKAXE,
-                Items.STONE_AXE,
-                Items.STONE_SHOVEL,
-                Items.STONE_HOE,
-                Items.CHAINMAIL_HELMET,
-                Items.CHAINMAIL_CHESTPLATE,
-                Items.CHAINMAIL_LEGGINGS,
-                Items.CHAINMAIL_BOOTS,
-                Items.LEATHER_HELMET,
-                Items.LEATHER_CHESTPLATE,
-                Items.LEATHER_LEGGINGS,
-                Items.LEATHER_BOOTS,
-                Items.WOODEN_SWORD,
-                Items.WOODEN_PICKAXE,
-                Items.WOODEN_AXE,
-                Items.WOODEN_SHOVEL,
-                Items.WOODEN_HOE,
-                Items.BOW,
-                Items.ARROW,
-                Items.CROSSBOW,
-                Items.TIPPED_ARROW,
-                Items.SPECTRAL_ARROW,
-                Items.SHIELD,
-                Items.TRIDENT,
-                Items.FISHING_ROD,
-                Items.CARROT_ON_A_STICK,
-                Items.WARPED_FUNGUS_ON_A_STICK,
-                Items.SADDLE,
-                Items.LEAD,
-                Items.NAME_TAG,
-                Items.BOOK,
-                Items.ENCHANTED_BOOK,
-                Items.WRITTEN_BOOK,
-                Items.WRITABLE_BOOK,
-                Items.INK_SAC,
-                Items.FEATHER,
-                Items.LEATHER,
-                Items.RABBIT_HIDE,
-                Items.STRING,
-                Items.BONE,
-                Items.ENDER_PEARL,
-                Items.ENDER_EYE,
-                Items.GHAST_TEAR,
-                Items.GUNPOWDER,
-                Items.BLAZE_POWDER,
-                Items.MAGMA_CREAM,
-                Items.SLIME_BALL,
-                Items.SPIDER_EYE,
-                Items.FERMENTED_SPIDER_EYE,
-                Items.PHANTOM_MEMBRANE,
-                Items.NETHER_STAR,
-                Items.NETHER_WART,
-                Items.GLOWSTONE_DUST,
-                Items.REDSTONE,
-                Items.GLOWSTONE,
-                Items.QUARTZ,
-                Items.PRISMARINE_SHARD,
-                Items.PRISMARINE_CRYSTALS,
-                Items.SHULKER_SHELL,
-                Items.SHULKER_BOX,
-                Items.ELYTRA,
-                Items.TOTEM_OF_UNDYING,
-                Items.DRAGON_BREATH,
-                Items.EXPERIENCE_BOTTLE,
-                Items.ENCHANTING_TABLE,
-                Items.ANVIL,
-                Items.CHIPPED_ANVIL,
-                Items.DAMAGED_ANVIL,
-                Items.GRINDSTONE,
-                Items.SMITHING_TABLE,
-                Items.SMOKER,
-                Items.BLAST_FURNACE,
-                Items.CARTOGRAPHY_TABLE,
-                Items.FLETCHING_TABLE,
-                Items.SMITHING_TABLE,
-                Items.STONECUTTER,
-                Items.BREWING_STAND,
-                Items.CAULDRON,
-                Items.BELL,
-                Items.LOOM,
-                Items.COMPOSTER,
-                Items.BARREL,
-                Items.BEEHIVE,
-                Items.BEE_NEST,
-                Items.CAMPFIRE,
-                Items.SOUL_CAMPFIRE,
-                Items.LANTERN,
-                Items.SOUL_LANTERN,
-                Items.TORCH,
-                Items.SOUL_TORCH,
-                Items.REDSTONE_TORCH,
-                Items.REDSTONE_LAMP,
-                Items.REDSTONE_BLOCK,
-                Items.BEEF,
-                Items.PORKCHOP,
-                Items.CHICKEN,
-                Items.MUTTON,
-                Items.RABBIT,
-                Items.COD,
-                Items.SALMON,
-                Items.TROPICAL_FISH,
-                Items.PUFFERFISH,
-                Items.COOKED_BEEF,
-                Items.COOKED_PORKCHOP,
-                Items.COOKED_CHICKEN,
-                Items.COOKED_MUTTON,
-                Items.COOKED_RABBIT,
-                Items.COOKED_COD,
-                Items.COOKED_SALMON,
-                Items.COBBLESTONE,
-                Items.STONE,
-                Items.GRANITE,
-                Items.ACACIA_LOG,
-                Items.BIRCH_LOG,
-                Items.DARK_OAK_LOG,
-                Items.JUNGLE_LOG,
-                Items.OAK_LOG,
-                Items.SPRUCE_LOG,
-                Items.ACACIA_PLANKS,
-                Items.BIRCH_PLANKS,
-                Items.DARK_OAK_PLANKS,
-                Items.JUNGLE_PLANKS,
-                Items.OAK_PLANKS,
-                Items.SPRUCE_PLANKS,
-                Items.ACACIA_SLAB,
-                Items.BIRCH_SLAB,
-                Items.DARK_OAK_SLAB,
-                Items.JUNGLE_SLAB,
-                Items.OAK_SLAB,
-                Items.SPRUCE_SLAB,
-                Items.ACACIA_STAIRS,
-                Items.BIRCH_STAIRS,
-                Items.DARK_OAK_STAIRS,
-                Items.JUNGLE_STAIRS,
-                Items.OAK_STAIRS,
-                Items.SPRUCE_STAIRS,
-                Items.ACACIA_FENCE,
-                Items.BIRCH_FENCE,
-                Items.DARK_OAK_FENCE,
-                Items.JUNGLE_FENCE,
-                Items.OAK_FENCE,
-                Items.SPRUCE_FENCE,
-                Items.ACACIA_FENCE_GATE,
-                Items.BIRCH_FENCE_GATE,
-                Items.DARK_OAK_FENCE_GATE,
-                Items.JUNGLE_FENCE_GATE,
-                Items.OAK_FENCE_GATE,
-                Items.SPRUCE_FENCE_GATE,
-                Items.ACACIA_DOOR,
-                Items.BIRCH_DOOR,
-                Items.DARK_OAK_DOOR,
-                Items.JUNGLE_DOOR,
-                Items.OAK_DOOR,
-                Items.SPRUCE_DOOR,
-                Items.ACACIA_TRAPDOOR,
-                Items.BIRCH_TRAPDOOR,
-                Items.DARK_OAK_TRAPDOOR,
-                Items.JUNGLE_TRAPDOOR,
-                Items.OAK_TRAPDOOR,
-                Items.SPRUCE_TRAPDOOR
-        );
-
-        // Choose number of items to drop between 1 and 32
-        int numberOfItems = this.random.nextInt(32) + 1;
-
-        // Now drop the items
-        for (int i = 0; i < numberOfItems; i++) {
-            boolean isBlock = this.random.nextInt(2) == 0;
-            if (isBlock) {
-                List<Item> blockItems = Arrays.asList(
-                        Items.STONE,
-                        Items.OAK_LOG,
-                        Items.OAK_PLANKS,
-                        Items.COBBLESTONE
-                );
-                Item blockItem = blockItems.get(this.random.nextInt(blockItems.size()));
-                this.spawnAtLocation(new ItemStack(blockItem), p_345102_);
-            }
-            else
-            {
-                Item item = Lootitems.get(this.random.nextInt(Lootitems.size()));
-                this.spawnAtLocation(new ItemStack(item), p_345102_);
-            }
-        }*/
 
         // Drop all items from the inventory
         for (int i = 0; i < this.inventory.getContainerSize(); i++) {
@@ -1057,11 +824,16 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     @Override
-    protected void pickUpItem(ServerLevel p_363972_, ItemEntity p_21471_) {
-        super.pickUpItem(p_363972_, p_21471_);
-        inventory.addItem(p_21471_.getItem());
-        p_21471_.discard();
-        //InventoryCarrier.pickUpItem(p_363972_, this, this, p_21471_);
+    protected void pickUpItem(ServerLevel level, ItemEntity itemEntity) {
+        super.pickUpItem(level, itemEntity);
+        if (!itemEntity.isRemoved() && !itemEntity.getItem().isEmpty()) {
+            ItemStack leftover = inventory.addItem(itemEntity.getItem().copy());
+            if (leftover.getCount() < itemEntity.getItem().getCount()) {
+                this.onItemPickup(itemEntity);
+                if (leftover.isEmpty()) itemEntity.discard();
+                else itemEntity.setItem(leftover);
+            }
+        }
     }
 
     @Override
@@ -1075,8 +847,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     @Override
-    public boolean wantsToPickUp(ServerLevel p_367521_, ItemStack p_21546_) {
-        return super.wantsToPickUp(p_367521_, p_21546_);
+    public boolean wantsToPickUp(ServerLevel level, ItemStack stack) {
+        return !stack.isEmpty();
     }
 
     // Add to save data
@@ -1084,6 +856,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public void addAdditionalSaveData(CompoundTag p_34458_) {
         super.addAdditionalSaveData(p_34458_);
         this.addPersistentAngerSaveData(p_34458_);
+        this.setNoAi(false);
         p_34458_.putString("EntityName", ENTITY_NAME);
         p_34458_.putString("EntityUUID", entityUUID);
         p_34458_.putString("CustomSkin", this.getCustomSkin().toString());
