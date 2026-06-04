@@ -92,7 +92,6 @@ public class FakePlayerInventoryScreen extends AbstractContainerScreen<FakePlaye
         // Section labels
         String name = displayEntity != null ? displayEntity.getName().getString() : "FakePlayer";
         guiGraphics.drawString(font, name + "'s Inventory", leftPos + 30, topPos + 6, 0x404040, false);
-        guiGraphics.drawString(font, "Equipment", leftPos + 7, topPos + 100, 0x606060, false);
         guiGraphics.drawString(font, "Player Inventory", leftPos + 7, topPos + PLAYER_LABEL_Y, 0x606060, false);
     }
 

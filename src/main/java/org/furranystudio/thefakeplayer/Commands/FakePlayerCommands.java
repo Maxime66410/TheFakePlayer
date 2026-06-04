@@ -15,6 +15,7 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.player.Player;
@@ -112,7 +113,14 @@ public class FakePlayerCommands {
                             "\nCan pick up loot: " + fp.canPickUpLoot() +
                             "\nTarget: " + targetInfo +
                             "\nBlocking: " + fp.isBlocking() +
-                            "\nInventory: " + itemCount + " item(s)";
+                            "\nInventory: " + itemCount + " item(s)" +
+                            "\n--- Equipment ---" +
+                            "\nMainhand: " + (fp.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.MAINHAND).getHoverName().getString()) +
+                            "\nOffhand:  " + (fp.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.OFFHAND).getHoverName().getString()) +
+                            "\nHead:     " + (fp.getItemBySlot(EquipmentSlot.HEAD).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.HEAD).getHoverName().getString()) +
+                            "\nChest:    " + (fp.getItemBySlot(EquipmentSlot.CHEST).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.CHEST).getHoverName().getString()) +
+                            "\nLegs:     " + (fp.getItemBySlot(EquipmentSlot.LEGS).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.LEGS).getHoverName().getString()) +
+                            "\nFeet:     " + (fp.getItemBySlot(EquipmentSlot.FEET).isEmpty() ? "empty" : fp.getItemBySlot(EquipmentSlot.FEET).getHoverName().getString());
 
                         context.getSource().sendSuccess(() -> Component.literal(msg), false);
                         return Command.SINGLE_SUCCESS;

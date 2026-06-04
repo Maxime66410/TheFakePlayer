@@ -14,11 +14,11 @@ import org.furranystudio.thefakeplayer.Entity.ModMenuTypes;
 
 public class FakePlayerInventoryMenu extends AbstractContainerMenu {
 
-    public static final int EQUIP_END      = 5;
-    public static final int FAKE_INV_START = 5;
-    public static final int FAKE_INV_END   = 41;
-    public static final int PLAYER_INV_START = 41;
-    public static final int PLAYER_INV_END   = 77;
+    public static final int EQUIP_END        = 6;
+    public static final int FAKE_INV_START   = 6;
+    public static final int FAKE_INV_END     = 42;
+    public static final int PLAYER_INV_START = 42;
+    public static final int PLAYER_INV_END   = 78;
 
     // Server constructor
     public FakePlayerInventoryMenu(int id, Inventory playerInv, FakePlayerEntity entity) {
@@ -26,40 +26,43 @@ public class FakePlayerInventoryMenu extends AbstractContainerMenu {
         buildSlots(playerInv, new EquipmentContainer(entity), entity.getInventory());
     }
 
-    // Client constructor — called from IForgeMenuType factory, items synced from server
+    // Client constructor — items synced from server
     public FakePlayerInventoryMenu(int id, Inventory playerInv, FriendlyByteBuf data) {
         super(ModMenuTypes.FAKE_PLAYER_INVENTORY.get(), id);
-        buildSlots(playerInv, new SimpleContainer(5), new SimpleContainer(36));
+        buildSlots(playerInv, new SimpleContainer(6), new SimpleContainer(36));
     }
 
     private void buildSlots(Inventory playerInv, Container equip, Container inv) {
-        // Equipment (slots 0-4)
+        // Armor — left column (slots 0-3)
         this.addSlot(new Slot(equip, 0, 8, 8));    // HEAD
         this.addSlot(new Slot(equip, 1, 8, 26));   // CHEST
         this.addSlot(new Slot(equip, 2, 8, 44));   // LEGS
         this.addSlot(new Slot(equip, 3, 8, 62));   // FEET
-        this.addSlot(new Slot(equip, 4, 8, 80));   // OFFHAND
 
-        // FakePlayer main inventory (slots 5-31) — SimpleContainer indices 9-35
+        // Hands — right column (slots 4-5)
+        this.addSlot(new Slot(equip, 4, 152, 26)); // MAINHAND
+        this.addSlot(new Slot(equip, 5, 152, 44)); // OFFHAND
+
+        // FakePlayer main inventory (slots 6-32) — SimpleContainer indices 9-35
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 110 + row * 18));
             }
         }
 
-        // FakePlayer hotbar (slots 32-40) — SimpleContainer indices 0-8
+        // FakePlayer storage (slots 33-41) — SimpleContainer indices 0-8
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inv, col, 8 + col * 18, 168));
         }
 
-        // Player main inventory (slots 41-67)
+        // Player main inventory (slots 42-68)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, 206 + row * 18));
             }
         }
 
-        // Player hotbar (slots 68-76)
+        // Player hotbar (slots 69-77)
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInv, col, 8 + col * 18, 260));
         }
@@ -78,12 +81,10 @@ public class FakePlayerInventoryMenu extends AbstractContainerMenu {
         ItemStack original = stack.copy();
 
         if (index < FAKE_INV_END) {
-            // FakePlayer slot → move to player inventory
             if (!this.moveItemStackTo(stack, PLAYER_INV_START, PLAYER_INV_END, true)) {
                 return ItemStack.EMPTY;
             }
         } else {
-            // Player slot → move to FakePlayer inventory
             if (!this.moveItemStackTo(stack, FAKE_INV_START, FAKE_INV_END, false)) {
                 return ItemStack.EMPTY;
             }
@@ -95,12 +96,12 @@ public class FakePlayerInventoryMenu extends AbstractContainerMenu {
         return original;
     }
 
-    // Maps the 5 equipment slots to FakePlayerEntity's EquipmentSlot API
+    // Maps the 6 equipment slots to FakePlayerEntity's EquipmentSlot API
     private static class EquipmentContainer implements Container {
 
         private static final EquipmentSlot[] SLOTS = {
             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
-            EquipmentSlot.FEET, EquipmentSlot.OFFHAND
+            EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND
         };
 
         private final FakePlayerEntity entity;
@@ -109,7 +110,7 @@ public class FakePlayerInventoryMenu extends AbstractContainerMenu {
             this.entity = entity;
         }
 
-        @Override public int getContainerSize() { return 5; }
+        @Override public int getContainerSize() { return 6; }
 
         @Override
         public boolean isEmpty() {
