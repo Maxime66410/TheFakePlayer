@@ -58,6 +58,8 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
@@ -373,6 +375,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<Mob>(this, Mob.class, 10, false, false, this::isHostileMob));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<Animal>(this, Animal.class, 10, false, false, this::isHuntableAnimal));
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
 
@@ -1018,6 +1022,21 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     @Override
     public boolean canHoldItem(ItemStack p_21545_) {
         return super.canHoldItem(p_21545_);
+    }
+
+    private boolean hasFood() {
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).has(DataComponents.FOOD)) return true;
+        }
+        return false;
+    }
+
+    private boolean isHostileMob(LivingEntity e, ServerLevel level) {
+        return e instanceof Enemy && e != this && this.getHealth() > this.getMaxHealth() * 0.2f;
+    }
+
+    private boolean isHuntableAnimal(LivingEntity e, ServerLevel level) {
+        return !hasFood() && this.getHealth() > this.getMaxHealth() * 0.2f;
     }
 
     // Inventory Logic
