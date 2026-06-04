@@ -4,13 +4,22 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.event.entity.living.MobGriefingEvent;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 
 @Mod.EventBusSubscriber(modid = Thefakeplayer.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeEvents {
+
+    @SubscribeEvent
+    public static void onMobGriefing(MobGriefingEvent event) {
+        if (event.getEntity() instanceof FakePlayerEntity) {
+            event.setResult(Event.Result.ALLOW);
+        }
+    }
 
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
