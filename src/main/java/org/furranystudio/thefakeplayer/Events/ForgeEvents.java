@@ -7,7 +7,7 @@ import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.event.entity.living.MobGriefingEvent;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 
@@ -15,7 +15,7 @@ import org.furranystudio.thefakeplayer.Thefakeplayer;
 public class ForgeEvents {
 
     @SubscribeEvent
-    public static void onMobGriefing(MobGriefingEvent event) {
+    public static void onMobGriefing(EntityMobGriefingEvent event) {
         if (event.getEntity() instanceof FakePlayerEntity) {
             event.setResult(Event.Result.ALLOW);
         }
