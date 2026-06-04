@@ -108,6 +108,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public boolean isCrouching;
     public double speedValue;
     public int shieldCooldown = 0;
+    public boolean godMode = false;
+    public int suppressTargetingTicks = 0;
 
     // Tab list / chat
     private boolean hasTabListEntry = false;
@@ -351,6 +353,9 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         // Reset timer entre 3 et 10 minutes
         chatTimer = 20 * 60 * (3 + this.random.nextInt(8));
     }
+
+    public net.minecraft.world.entity.ai.goal.GoalSelector getGoalSelector() { return this.goalSelector; }
+    public net.minecraft.world.entity.ai.goal.GoalSelector getTargetSelector() { return this.targetSelector; }
 
     // Methods - Entity for FakePlayerEntity
     @Override
@@ -1032,11 +1037,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     private boolean isHostileMob(LivingEntity e, ServerLevel level) {
-        return e instanceof Enemy && e != this && this.getHealth() > this.getMaxHealth() * 0.2f;
+        return suppressTargetingTicks <= 0 && e instanceof Enemy && e != this && this.getHealth() > this.getMaxHealth() * 0.2f;
     }
 
     private boolean isHuntableAnimal(LivingEntity e, ServerLevel level) {
-        return !hasFood() && this.getHealth() > this.getMaxHealth() * 0.2f;
+        return suppressTargetingTicks <= 0 && !hasFood() && this.getHealth() > this.getMaxHealth() * 0.2f;
     }
 
     // Inventory Logic
@@ -1207,9 +1212,9 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             if (swing > 0) {
                 this.entityData.set(SWING_ANIM_TICK, Math.max(0, swing - 2));
             }
-            if (shieldCooldown > 0) {
-                shieldCooldown--;
-            }
+            if (shieldCooldown > 0) shieldCooldown--;
+            if (suppressTargetingTicks > 0) suppressTargetingTicks--;
+            if (godMode) this.setHealth(this.getMaxHealth());
         }
     }
 
