@@ -1,28 +1,39 @@
 package org.furranystudio.thefakeplayer.Entity.Goals;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.phys.Vec3;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.EnumSet;
 
 public class FakePlayerWeaponSelectGoal extends Goal {
 
+    private enum TargetContext { UNDEAD, ARTHROPOD, CREEPER, DEFAULT }
+
     private final FakePlayerEntity entity;
     private int weaponSlot = -1;
     private int shieldSlot = -1;
     private boolean movedWeapon = false;
     private boolean movedShield = false;
+    private TargetContext currentContext = TargetContext.DEFAULT;
 
     private static final float CRITICAL_HEALTH_RATIO = 0.2f;
     private static final double SHIELD_RAISE_DISTANCE = 3.5;
     private static final double SPRINT_DISTANCE = 8.0;
+    private static final double CREEPER_SHIELD_DISTANCE = 4.0;
 
     public FakePlayerWeaponSelectGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -34,10 +45,11 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         if (entity.getTarget() == null) return false;
         if (entity.getHealth() <= entity.getMaxHealth() * CRITICAL_HEALTH_RATIO) return false;
 
-        weaponSlot = findBestWeaponSlot();
+        currentContext = getContext(entity.getTarget());
+        weaponSlot = findBestWeaponSlot(currentContext);
         shieldSlot = findShieldSlot();
 
-        boolean hasWeapon = weaponSlot >= 0 || getWeaponScore(entity.getMainHandItem()) > 0;
+        boolean hasWeapon = weaponSlot >= 0 || getWeaponScore(entity.getMainHandItem(), currentContext) > 0;
         boolean hasShield = shieldSlot >= 0 || entity.getOffhandItem().getItem() instanceof ShieldItem;
 
         return hasWeapon || hasShield;
@@ -59,7 +71,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
 
         if (weaponSlot >= 0) {
             ItemStack candidate = entity.getInventory().getItem(weaponSlot);
-            if (getWeaponScore(candidate) > getWeaponScore(currentMain)) {
+            if (getWeaponScore(candidate, currentContext) > getWeaponScore(currentMain, currentContext)) {
                 if (!currentMain.isEmpty()) {
                     entity.getInventory().addItem(currentMain.copy());
                 }
@@ -90,8 +102,31 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         LivingEntity target = entity.getTarget();
         if (target == null) return;
 
+        currentContext = getContext(target);
         double dist = entity.distanceTo(target);
         boolean hasShield = entity.getOffhandItem().getItem() instanceof ShieldItem;
+
+        if (target instanceof Creeper creeper && creeper.getSwellDir() > 0) {
+            if (dist < CREEPER_SHIELD_DISTANCE) {
+                // Trop proche pour fuir — lever le bouclier
+                if (hasShield && entity.shieldCooldown <= 0 && !entity.isUsingItem()) {
+                    entity.startUsingItem(InteractionHand.OFF_HAND);
+                }
+            } else {
+                // Fuir dans la direction opposée au creeper
+                if (entity.isUsingItem() && entity.getUseItem().getItem() instanceof ShieldItem) {
+                    entity.stopUsingItem();
+                }
+                Vec3 awayDir = entity.position().subtract(target.position()).normalize();
+                entity.getNavigation().moveTo(
+                        entity.getX() + awayDir.x * 5,
+                        entity.getY(),
+                        entity.getZ() + awayDir.z * 5,
+                        1.5
+                );
+            }
+            return;
+        }
 
         entity.setSprinting(dist > 2.5 && dist <= SPRINT_DISTANCE);
 
@@ -120,6 +155,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         shieldSlot = -1;
         movedWeapon = false;
         movedShield = false;
+        currentContext = TargetContext.DEFAULT;
     }
 
     private void returnToInventory(InteractionHand hand, int slot) {
@@ -133,11 +169,18 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         entity.setItemInHand(hand, ItemStack.EMPTY);
     }
 
-    private int findBestWeaponSlot() {
+    private TargetContext getContext(LivingEntity target) {
+        if (target instanceof Creeper) return TargetContext.CREEPER;
+        if (target.getType().is(EntityTypeTags.SENSITIVE_TO_SMITE)) return TargetContext.UNDEAD;
+        if (target.getType().is(EntityTypeTags.SENSITIVE_TO_BANE_OF_ARTHROPODS)) return TargetContext.ARTHROPOD;
+        return TargetContext.DEFAULT;
+    }
+
+    private int findBestWeaponSlot(TargetContext context) {
         int bestSlot = -1;
-        float bestScore = getWeaponScore(entity.getMainHandItem());
+        float bestScore = getWeaponScore(entity.getMainHandItem(), context);
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
-            float score = getWeaponScore(entity.getInventory().getItem(i));
+            float score = getWeaponScore(entity.getInventory().getItem(i), context);
             if (score > bestScore) {
                 bestScore = score;
                 bestSlot = i;
@@ -154,7 +197,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         return -1;
     }
 
-    private float getWeaponScore(ItemStack stack) {
+    private float getWeaponScore(ItemStack stack, TargetContext context) {
         if (stack.isEmpty()) return 0f;
         ItemAttributeModifiers mods = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
         float total = 0f;
@@ -163,6 +206,20 @@ public class FakePlayerWeaponSelectGoal extends Goal {
                 total += (float) entry.modifier().amount();
             }
         }
+        if (total == 0f) return 0f;
+        switch (context) {
+            case UNDEAD -> total += getEnchantmentLevel(stack, Enchantments.SMITE) * 2.5f;
+            case ARTHROPOD -> total += getEnchantmentLevel(stack, Enchantments.BANE_OF_ARTHROPODS) * 2.5f;
+            default -> {}
+        }
         return total;
+    }
+
+    private int getEnchantmentLevel(ItemStack stack, ResourceKey<Enchantment> key) {
+        ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        for (var entry : enchantments.entrySet()) {
+            if (entry.getKey().is(key)) return entry.getIntValue();
+        }
+        return 0;
     }
 }
