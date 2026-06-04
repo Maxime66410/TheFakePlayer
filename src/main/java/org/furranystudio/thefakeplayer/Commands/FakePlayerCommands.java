@@ -4,6 +4,10 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
+import org.furranystudio.thefakeplayer.Entity.Menu.FakePlayerInventoryMenu;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -217,6 +221,20 @@ public class FakePlayerCommands {
                             return Command.SINGLE_SUCCESS;
                         })
                     )
+                )
+
+                .then(Commands.literal("inventoryui")
+                    .executes(context -> {
+                        FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        Player player = context.getSource().getPlayerOrException();
+                        if (!(player instanceof ServerPlayer serverPlayer)) return error(context.getSource(), "Must be run by a player.");
+                        serverPlayer.openMenu(new SimpleMenuProvider(
+                            (id, inv, p) -> new FakePlayerInventoryMenu(id, inv, fp),
+                            fp.getName()
+                        ));
+                        return Command.SINGLE_SUCCESS;
+                    })
                 )
 
                 .then(Commands.literal("target")

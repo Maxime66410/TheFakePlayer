@@ -45,6 +45,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.furranystudio.thefakeplayer.Commands.FakePlayerCommands;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Entity.ModEntities;
+import org.furranystudio.thefakeplayer.Entity.ModMenuTypes;
 import org.slf4j.Logger;
 
 import javax.swing.text.AttributeSet;
@@ -71,6 +72,7 @@ public class Thefakeplayer {
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         ModEntities.ENTITIES.register(modEventBus);
+        ModMenuTypes.MENU_TYPES.register(modEventBus);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

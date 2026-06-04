@@ -1214,7 +1214,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             }
             if (shieldCooldown > 0) shieldCooldown--;
             if (suppressTargetingTicks > 0) suppressTargetingTicks--;
-            if (godMode) this.setHealth(this.getMaxHealth());
+            if (godMode) this.setHealth(this.getMaxHealth() * 10);
         }
     }
 
