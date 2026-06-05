@@ -53,6 +53,8 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCreeperFleeGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -371,7 +373,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
-        this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D)); // Random roaming
+        this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
+        this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true)); // Melee attack
         this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
