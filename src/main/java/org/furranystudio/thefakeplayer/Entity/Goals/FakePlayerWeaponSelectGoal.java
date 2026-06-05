@@ -14,7 +14,6 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.phys.Vec3;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.EnumSet;
@@ -33,7 +32,6 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     private static final float CRITICAL_HEALTH_RATIO = 0.2f;
     private static final double SHIELD_RAISE_DISTANCE = 3.5;
     private static final double SPRINT_DISTANCE = 8.0;
-    private static final double CREEPER_SHIELD_DISTANCE = 4.0;
 
     public FakePlayerWeaponSelectGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -105,28 +103,6 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         currentContext = getContext(target);
         double dist = entity.distanceTo(target);
         boolean hasShield = entity.getOffhandItem().getItem() instanceof ShieldItem;
-
-        if (target instanceof Creeper creeper && creeper.getSwellDir() > 0) {
-            if (dist < CREEPER_SHIELD_DISTANCE) {
-                // Too close to flee — raise shield
-                if (hasShield && entity.shieldCooldown <= 0 && !entity.isUsingItem()) {
-                    entity.startUsingItem(InteractionHand.OFF_HAND);
-                }
-            } else {
-                // Flee in the opposite direction from the creeper
-                if (entity.isUsingItem() && entity.getUseItem().getItem() instanceof ShieldItem) {
-                    entity.stopUsingItem();
-                }
-                Vec3 awayDir = entity.position().subtract(target.position()).normalize();
-                entity.getNavigation().moveTo(
-                        entity.getX() + awayDir.x * 5,
-                        entity.getY(),
-                        entity.getZ() + awayDir.z * 5,
-                        1.5
-                );
-            }
-            return;
-        }
 
         entity.setSprinting(dist > 2.5 && dist <= SPRINT_DISTANCE);
 

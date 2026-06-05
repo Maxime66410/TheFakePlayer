@@ -52,6 +52,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCraftGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCreeperFleeGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -364,6 +365,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         // Add goals to the entity
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Float in water
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
+        this.goalSelector.addGoal(1, new FakePlayerCreeperFleeGoal(this));
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
@@ -796,6 +798,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     private boolean hasFood() {
+        if (this.getMainHandItem().has(DataComponents.FOOD)) return true;
+        if (this.getOffhandItem().has(DataComponents.FOOD)) return true;
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             if (inventory.getItem(i).has(DataComponents.FOOD)) return true;
         }
