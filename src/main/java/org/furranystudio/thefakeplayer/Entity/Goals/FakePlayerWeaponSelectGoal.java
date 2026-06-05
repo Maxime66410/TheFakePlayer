@@ -7,7 +7,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
@@ -27,6 +30,8 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     private int shieldSlot = -1;
     private boolean movedWeapon = false;
     private boolean movedShield = false;
+    private Item movedWeaponItem = null;
+    private Item movedShieldItem = null;
     private TargetContext currentContext = TargetContext.DEFAULT;
 
     private static final float CRITICAL_HEALTH_RATIO = 0.2f;
@@ -64,6 +69,8 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     public void start() {
         movedWeapon = false;
         movedShield = false;
+        movedWeaponItem = null;
+        movedShieldItem = null;
 
         ItemStack currentMain = entity.getMainHandItem();
 
@@ -71,10 +78,15 @@ public class FakePlayerWeaponSelectGoal extends Goal {
             ItemStack candidate = entity.getInventory().getItem(weaponSlot);
             if (getWeaponScore(candidate, currentContext) > getWeaponScore(currentMain, currentContext)) {
                 if (!currentMain.isEmpty()) {
-                    entity.getInventory().addItem(currentMain.copy());
+                    ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
+                    if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                        serverLevel.addFreshEntity(new ItemEntity(serverLevel,
+                                entity.getX(), entity.getY(), entity.getZ(), leftover));
+                    }
                 }
                 entity.setItemInHand(InteractionHand.MAIN_HAND, candidate.copy());
                 entity.getInventory().setItem(weaponSlot, ItemStack.EMPTY);
+                movedWeaponItem = candidate.getItem();
                 movedWeapon = true;
             } else {
                 weaponSlot = -1;
@@ -89,6 +101,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
             }
             entity.setItemInHand(InteractionHand.OFF_HAND, shield.copy());
             entity.getInventory().setItem(shieldSlot, ItemStack.EMPTY);
+            movedShieldItem = shield.getItem();
             movedShield = true;
         } else {
             shieldSlot = -1;
@@ -121,16 +134,26 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         entity.stopUsingItem();
 
         if (movedWeapon && weaponSlot >= 0) {
-            returnToInventory(InteractionHand.MAIN_HAND, weaponSlot);
+            // Only return if MAIN_HAND still holds the weapon we placed.
+            // If another goal displaced it (e.g. EatGoal), don't touch MAIN_HAND — that goal manages it.
+            ItemStack currentMain = entity.getMainHandItem();
+            if (!currentMain.isEmpty() && movedWeaponItem != null && currentMain.getItem() == movedWeaponItem) {
+                returnToInventory(InteractionHand.MAIN_HAND, weaponSlot);
+            }
         }
         if (movedShield && shieldSlot >= 0) {
-            returnToInventory(InteractionHand.OFF_HAND, shieldSlot);
+            ItemStack currentOff = entity.getOffhandItem();
+            if (!currentOff.isEmpty() && movedShieldItem != null && currentOff.getItem() == movedShieldItem) {
+                returnToInventory(InteractionHand.OFF_HAND, shieldSlot);
+            }
         }
 
         weaponSlot = -1;
         shieldSlot = -1;
         movedWeapon = false;
         movedShield = false;
+        movedWeaponItem = null;
+        movedShieldItem = null;
         currentContext = TargetContext.DEFAULT;
     }
 

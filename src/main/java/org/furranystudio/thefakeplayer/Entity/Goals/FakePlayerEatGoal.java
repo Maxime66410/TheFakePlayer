@@ -7,6 +7,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
@@ -16,7 +18,7 @@ public class FakePlayerEatGoal extends Goal {
 
     private final FakePlayerEntity entity;
     private ItemStack foodStack = ItemStack.EMPTY;
-    private ItemStack savedMainHand = ItemStack.EMPTY;
+    private Item foodItemInHand = null;
     private int eatTicks = 0;
     private static final int EAT_DURATION = 20; // ~1s like a real player
 
@@ -46,7 +48,16 @@ public class FakePlayerEatGoal extends Goal {
     public void start() {
         eatTicks = 0;
         entity.setEatAnimTick(0);
-        savedMainHand = entity.getMainHandItem().copy();
+        // Move whatever is in MAIN_HAND to inventory before eating
+        ItemStack currentMain = entity.getMainHandItem();
+        if (!currentMain.isEmpty()) {
+            ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
+            if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                serverLevel.addFreshEntity(new ItemEntity(serverLevel,
+                        entity.getX(), entity.getY(), entity.getZ(), leftover));
+            }
+        }
+        foodItemInHand = foodStack.getItem();
         entity.setItemInHand(InteractionHand.MAIN_HAND, foodStack.copy());
     }
 
@@ -103,9 +114,21 @@ public class FakePlayerEatGoal extends Goal {
     public void stop() {
         eatTicks = 0;
         entity.setEatAnimTick(0);
+
+        // If something was placed in MAIN_HAND during eating (e.g., auto-pickup),
+        // move it to inventory rather than discarding it.
+        ItemStack currentMain = entity.getMainHandItem();
+        if (!currentMain.isEmpty() && (foodItemInHand == null || currentMain.getItem() != foodItemInHand)) {
+            ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
+            if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                serverLevel.addFreshEntity(new ItemEntity(serverLevel,
+                        entity.getX(), entity.getY(), entity.getZ(), leftover));
+            }
+        }
+
+        entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         foodStack = ItemStack.EMPTY;
-        entity.setItemInHand(InteractionHand.MAIN_HAND, savedMainHand);
-        savedMainHand = ItemStack.EMPTY;
+        foodItemInHand = null;
     }
 
     private ItemStack findFood() {
