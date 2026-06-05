@@ -46,13 +46,13 @@ public class FakePlayerCreeperFleeGoal extends Goal {
         double dist = entity.distanceTo(creeper);
         boolean hasShield = entity.getOffhandItem().getItem() instanceof ShieldItem;
 
-        if (dist < SHIELD_DIST) {
-            // Too close to flee — raise shield
-            if (hasShield && entity.shieldCooldown <= 0 && !entity.isUsingItem()) {
+        if (hasShield) {
+            // Has shield — hold position and block
+            if (entity.shieldCooldown <= 0 && !entity.isUsingItem()) {
                 entity.startUsingItem(InteractionHand.OFF_HAND);
             }
         } else {
-            // Lower shield and run away
+            // No shield — flee
             if (entity.isUsingItem() && entity.getUseItem().getItem() instanceof ShieldItem) {
                 entity.stopUsingItem();
             }
