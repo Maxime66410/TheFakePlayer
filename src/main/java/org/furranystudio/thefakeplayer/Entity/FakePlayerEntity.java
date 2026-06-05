@@ -44,6 +44,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -113,6 +115,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int shieldCooldown = 0;
     public boolean godMode = false;
     public int suppressTargetingTicks = 0;
+
+    private static final ResourceLocation CRIT_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("thefakeplayer", "crit_hit");
 
     // Tab list / chat
     private boolean hasTabListEntry = false;
@@ -1008,10 +1012,30 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             this.stopUsingItem();
         }
         this.shieldCooldown = 25;
-        boolean result = super.doHurtTarget(level, target);
-        if (result) {
-            triggerSwingAnim();
+
+        boolean isCrit = !this.onGround() && this.fallDistance > 0.0F
+                && !this.isInWater() && !this.onClimbable();
+
+        AttributeInstance atk = this.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (isCrit && atk != null) {
+            atk.addTransientModifier(new AttributeModifier(CRIT_MODIFIER_ID, 0.5, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
         }
+
+        boolean result = super.doHurtTarget(level, target);
+
+        if (isCrit && atk != null) {
+            atk.removeModifier(CRIT_MODIFIER_ID);
+            if (result) {
+                level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
+                        target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+                        15, 0.3, 0.3, 0.3, 0.1);
+                level.playSound(null, target.getX(), target.getY(), target.getZ(),
+                        net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_CRIT,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
+        }
+
+        if (result) triggerSwingAnim();
         return result;
     }
 

@@ -37,6 +37,9 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     private static final float CRITICAL_HEALTH_RATIO = 0.2f;
     private static final double SHIELD_RAISE_DISTANCE = 3.5;
     private static final double SPRINT_DISTANCE = 8.0;
+    private static final double CRIT_JUMP_DISTANCE = 4.0;
+    private static final int CRIT_JUMP_COOLDOWN = 40;
+    private int critJumpCooldown = 0;
 
     public FakePlayerWeaponSelectGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -71,6 +74,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         movedShield = false;
         movedWeaponItem = null;
         movedShieldItem = null;
+        critJumpCooldown = 0;
 
         ItemStack currentMain = entity.getMainHandItem();
 
@@ -119,6 +123,12 @@ public class FakePlayerWeaponSelectGoal extends Goal {
 
         entity.setSprinting(dist > 2.5 && dist <= SPRINT_DISTANCE);
 
+        if (critJumpCooldown > 0) critJumpCooldown--;
+        if (dist <= CRIT_JUMP_DISTANCE && entity.onGround() && critJumpCooldown <= 0 && !entity.isUsingItem()) {
+            entity.getJumpControl().jump();
+            critJumpCooldown = CRIT_JUMP_COOLDOWN;
+        }
+
         if (dist <= SHIELD_RAISE_DISTANCE && hasShield && entity.shieldCooldown <= 0) {
             if (!entity.isUsingItem()) {
                 entity.startUsingItem(InteractionHand.OFF_HAND);
@@ -154,6 +164,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
         movedShield = false;
         movedWeaponItem = null;
         movedShieldItem = null;
+        critJumpCooldown = 0;
         currentContext = TargetContext.DEFAULT;
     }
 
