@@ -24,8 +24,7 @@ public class FakePlayerEatGoal extends Goal {
 
     public FakePlayerEatGoal(FakePlayerEntity entity) {
         this.entity = entity;
-        // Empty flags: runs freely without blocking or being blocked
-        this.setFlags(EnumSet.noneOf(Flag.class));
+        this.setFlags(EnumSet.of(Flag.LOOK));
     }
 
     @Override

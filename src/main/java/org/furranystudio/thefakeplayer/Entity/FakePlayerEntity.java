@@ -56,6 +56,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCreeperFleeGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFleeGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerPotionGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
@@ -374,6 +375,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerCreeperFleeGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerFleeGoal(this));
+        this.goalSelector.addGoal(1, new FakePlayerPotionGoal(this));
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
