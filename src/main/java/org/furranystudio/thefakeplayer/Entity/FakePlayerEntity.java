@@ -55,6 +55,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCreeperFleeGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFleeGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
@@ -372,6 +373,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Float in water
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerCreeperFleeGoal(this));
+        this.goalSelector.addGoal(1, new FakePlayerFleeGoal(this));
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
@@ -809,11 +811,33 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         return super.canHoldItem(p_21545_);
     }
 
-    private boolean hasFood() {
+    public boolean hasFood() {
         if (this.getMainHandItem().has(DataComponents.FOOD)) return true;
         if (this.getOffhandItem().has(DataComponents.FOOD)) return true;
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             if (inventory.getItem(i).has(DataComponents.FOOD)) return true;
+        }
+        return false;
+    }
+
+    public boolean hasHealingPotion() {
+        if (isHealingPotion(this.getMainHandItem())) return true;
+        if (isHealingPotion(this.getOffhandItem())) return true;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (isHealingPotion(inventory.getItem(i))) return true;
+        }
+        return false;
+    }
+
+    private boolean isHealingPotion(ItemStack stack) {
+        if (!(stack.getItem() instanceof net.minecraft.world.item.PotionItem)) return false;
+        net.minecraft.world.item.alchemy.PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+        if (contents == null) return false;
+        for (net.minecraft.world.effect.MobEffectInstance eff : contents.getAllEffects()) {
+            if (eff.getEffect() == net.minecraft.world.effect.MobEffects.HEAL
+             || eff.getEffect() == net.minecraft.world.effect.MobEffects.REGENERATION) {
+                return true;
+            }
         }
         return false;
     }
