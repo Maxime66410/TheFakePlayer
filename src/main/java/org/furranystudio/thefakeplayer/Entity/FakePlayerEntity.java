@@ -785,6 +785,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                 this.spawnAtLocation(itemStack, p_345102_);
             }
         }
+
+        // Drop item from hand
+        if(!this.getMainHandItem().isEmpty()) {
+            this.spawnAtLocation(this.getMainHandItem(), p_345102_);
+        }
     }
 
     private void spawnAtLocation(ItemStack itemStack, ServerLevel level) {
