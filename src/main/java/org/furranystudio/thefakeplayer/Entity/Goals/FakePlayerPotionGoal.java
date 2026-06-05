@@ -7,9 +7,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.LingeringPotionItem;
 import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.SplashPotionItem;
 import net.minecraft.world.item.alchemy.PotionContents;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
@@ -20,6 +23,7 @@ public class FakePlayerPotionGoal extends Goal {
     private final FakePlayerEntity entity;
     private int potionSlot = -1;
     private Item potionItemInHand = null;
+    private boolean isThrowable = false;
     private static final float HEAL_HEALTH_RATIO = 0.5f;
 
     public FakePlayerPotionGoal(FakePlayerEntity entity) {
@@ -33,17 +37,24 @@ public class FakePlayerPotionGoal extends Goal {
         boolean needsHeal = entity.getHealth() < entity.getMaxHealth() * HEAL_HEALTH_RATIO;
         if (needsHeal) {
             potionSlot = findPotionSlot(true);
-            if (potionSlot >= 0) return true;
+            if (potionSlot >= 0) {
+                isThrowable = isThrowablePotion(entity.getInventory().getItem(potionSlot));
+                return true;
+            }
         }
         if (entity.getTarget() != null && !entity.hasEffect(MobEffects.DAMAGE_BOOST)) {
             potionSlot = findPotionSlot(false);
-            if (potionSlot >= 0) return true;
+            if (potionSlot >= 0) {
+                isThrowable = isThrowablePotion(entity.getInventory().getItem(potionSlot));
+                return true;
+            }
         }
         return false;
     }
 
     @Override
     public boolean canContinueToUse() {
+        if (isThrowable) return false;
         return entity.isUsingItem()
                 && potionItemInHand != null
                 && entity.getMainHandItem().getItem() == potionItemInHand;
@@ -51,19 +62,28 @@ public class FakePlayerPotionGoal extends Goal {
 
     @Override
     public void start() {
-        ItemStack currentMain = entity.getMainHandItem();
-        if (!currentMain.isEmpty()) {
-            ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
-            if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
-                serverLevel.addFreshEntity(new ItemEntity(serverLevel,
-                        entity.getX(), entity.getY(), entity.getZ(), leftover));
-            }
-        }
         ItemStack potion = entity.getInventory().getItem(potionSlot).copy();
-        potionItemInHand = potion.getItem();
-        entity.setItemInHand(InteractionHand.MAIN_HAND, potion);
         entity.getInventory().setItem(potionSlot, ItemStack.EMPTY);
-        entity.startUsingItem(InteractionHand.MAIN_HAND);
+
+        if (isThrowable) {
+            if (!(entity.level() instanceof ServerLevel serverLevel)) return;
+            ThrownPotion projectile = new ThrownPotion(serverLevel, entity, potion);
+            projectile.setPos(entity.getX(), entity.getEyeY() - 0.1, entity.getZ());
+            projectile.shoot(0, -1, 0, 0.5f, 0);
+            serverLevel.addFreshEntity(projectile);
+        } else {
+            ItemStack currentMain = entity.getMainHandItem();
+            if (!currentMain.isEmpty()) {
+                ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
+                if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.addFreshEntity(new ItemEntity(serverLevel,
+                            entity.getX(), entity.getY(), entity.getZ(), leftover));
+                }
+            }
+            potionItemInHand = potion.getItem();
+            entity.setItemInHand(InteractionHand.MAIN_HAND, potion);
+            entity.startUsingItem(InteractionHand.MAIN_HAND);
+        }
     }
 
     @Override
@@ -73,25 +93,28 @@ public class FakePlayerPotionGoal extends Goal {
 
     @Override
     public void stop() {
-        if (entity.isUsingItem()) entity.stopUsingItem();
-        // If drinking was interrupted, return the potion to inventory
-        ItemStack currentMain = entity.getMainHandItem();
-        if (!currentMain.isEmpty() && potionItemInHand != null && currentMain.getItem() == potionItemInHand) {
-            ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
-            if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
-                serverLevel.addFreshEntity(new ItemEntity(serverLevel,
-                        entity.getX(), entity.getY(), entity.getZ(), leftover));
+        if (!isThrowable) {
+            if (entity.isUsingItem()) entity.stopUsingItem();
+            ItemStack currentMain = entity.getMainHandItem();
+            if (!currentMain.isEmpty() && potionItemInHand != null && currentMain.getItem() == potionItemInHand) {
+                ItemStack leftover = entity.getInventory().addItem(currentMain.copy());
+                if (!leftover.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.addFreshEntity(new ItemEntity(serverLevel,
+                            entity.getX(), entity.getY(), entity.getZ(), leftover));
+                }
+                entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             }
-            entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         }
         potionSlot = -1;
         potionItemInHand = null;
+        isThrowable = false;
     }
 
     private int findPotionSlot(boolean healing) {
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
             ItemStack stack = entity.getInventory().getItem(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof PotionItem)) continue;
+            if (stack.isEmpty()) continue;
+            if (!isDrinkablePotion(stack) && !isThrowablePotion(stack)) continue;
             PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
             if (contents == null) continue;
             for (MobEffectInstance eff : contents.getAllEffects()) {
@@ -100,5 +123,16 @@ public class FakePlayerPotionGoal extends Goal {
             }
         }
         return -1;
+    }
+
+    private boolean isDrinkablePotion(ItemStack stack) {
+        return stack.getItem() instanceof PotionItem
+                && !(stack.getItem() instanceof SplashPotionItem)
+                && !(stack.getItem() instanceof LingeringPotionItem);
+    }
+
+    private boolean isThrowablePotion(ItemStack stack) {
+        return stack.getItem() instanceof SplashPotionItem
+                || stack.getItem() instanceof LingeringPotionItem;
     }
 }

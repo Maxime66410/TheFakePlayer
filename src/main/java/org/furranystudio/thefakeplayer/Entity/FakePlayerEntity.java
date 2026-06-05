@@ -836,7 +836,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     private boolean isHealingPotion(ItemStack stack) {
-        if (!(stack.getItem() instanceof net.minecraft.world.item.PotionItem)) return false;
         net.minecraft.world.item.alchemy.PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         if (contents == null) return false;
         for (net.minecraft.world.effect.MobEffectInstance eff : contents.getAllEffects()) {
