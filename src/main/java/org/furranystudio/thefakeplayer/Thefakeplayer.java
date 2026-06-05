@@ -105,7 +105,7 @@ public class Thefakeplayer {
             MinecraftServer server = player.getServer();
             if (server == null) return;
 
-            // Si un fake player est déjà dans le monde, renvoyer son entrée tab list au joueur qui rejoint
+            // If a fake player is already in the world, send its tab list entry to the joining player
             server.getAllLevels().forEach(level -> {
                 level.getEntities().getAll().forEach(entity -> {
                     if (entity instanceof org.furranystudio.thefakeplayer.Entity.FakePlayerEntity fakePlayer) {

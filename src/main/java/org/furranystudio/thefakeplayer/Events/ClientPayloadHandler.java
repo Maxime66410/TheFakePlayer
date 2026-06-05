@@ -1,7 +1,7 @@
 package org.furranystudio.thefakeplayer.Events;
 
-// Anciennement utilisé pour recevoir le SyncSkinPacket via NeoForge.
-// La synchronisation du skin est désormais gérée par EntityDataAccessor dans FakePlayerEntity.
-// Ce fichier peut être supprimé sans impact.
+// Previously used to receive the SyncSkinPacket via NeoForge.
+// Skin synchronization is now handled by EntityDataAccessor in FakePlayerEntity.
+// This file can be deleted with no impact.
 public class ClientPayloadHandler {
 }

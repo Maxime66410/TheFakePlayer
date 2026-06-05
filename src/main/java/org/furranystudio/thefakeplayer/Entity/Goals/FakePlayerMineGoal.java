@@ -27,7 +27,7 @@ public class FakePlayerMineGoal extends Goal {
     private int miningTick = 0;
     private int breakTime = 20;
     private int cooldown = 0;
-    private int equippedToolSlot = -1; // slot dans l'inventaire, -1 = aucun outil
+    private int equippedToolSlot = -1; // inventory slot, -1 = no tool
 
     private static final int SEARCH_RANGE = 8;
     private static final int COOLDOWN_MINED = 200;
@@ -78,7 +78,7 @@ public class FakePlayerMineGoal extends Goal {
         BlockState state = entity.level().getBlockState(targetBlock);
         equippedToolSlot = selectBestToolSlot(state);
         if (equippedToolSlot >= 0) {
-            // Déplace l'outil de l'inventaire vers la main — aucune copie, l'original est en main
+            // Move the tool from inventory to hand — no copy, the original is in hand
             ItemStack tool = entity.getInventory().getItem(equippedToolSlot);
             entity.setItemInHand(InteractionHand.MAIN_HAND, tool);
             entity.getInventory().setItem(equippedToolSlot, ItemStack.EMPTY);
@@ -91,7 +91,7 @@ public class FakePlayerMineGoal extends Goal {
     public void tick() {
         if (targetBlock == null) return;
 
-        // Toujours regarder le bloc cible, même pendant l'approche
+        // Always look at the target block, even while approaching
         entity.getLookControl().setLookAt(targetBlock.getX() + 0.5, targetBlock.getY() + 0.5, targetBlock.getZ() + 0.5);
 
         if (entity.blockPosition().distSqr(targetBlock) > 6.25) {
@@ -103,7 +103,7 @@ public class FakePlayerMineGoal extends Goal {
 
         miningTick++;
 
-        // Crack overlay : stages 0-9 proportionnel à la progression
+        // Crack overlay: stages 0-9 proportional to progress
         if (entity.level() instanceof ServerLevel serverLevel) {
             int stage = Math.min(9, (int)((float) miningTick / breakTime * 10));
             serverLevel.destroyBlockProgress(entity.getId(), targetBlock, stage);
@@ -134,7 +134,7 @@ public class FakePlayerMineGoal extends Goal {
             if (next != null) {
                 targetBlock = next;
                 miningTick = 0;
-                // On garde l'outil en main pour le prochain bloc, on recalcule juste le temps
+                // Keep the tool in hand for the next block, just recompute break time
                 breakTime = computeBreakTime(entity.level().getBlockState(targetBlock), entity.getMainHandItem());
                 entity.getNavigation().moveTo(targetBlock.getX() + 0.5, targetBlock.getY(), targetBlock.getZ() + 0.5, 1.0);
             } else {
@@ -151,7 +151,7 @@ public class FakePlayerMineGoal extends Goal {
         }
         if (cooldown == 0) cooldown = COOLDOWN_NONE;
 
-        // Remet l'outil de la main dans l'inventaire avant de vider la main
+        // Return tool from hand to inventory before clearing the hand
         returnToolToInventory();
         entity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 
@@ -161,7 +161,7 @@ public class FakePlayerMineGoal extends Goal {
         entity.getNavigation().stop();
     }
 
-    // Remet l'outil (s'il y en a un) de la main vers le slot d'inventaire d'origine
+    // Returns the tool (if any) from hand back to its original inventory slot
     private void returnToolToInventory() {
         ItemStack hand = entity.getMainHandItem();
         if (hand.isEmpty() || !(hand.getItem() instanceof DiggerItem)) return;
@@ -182,7 +182,7 @@ public class FakePlayerMineGoal extends Goal {
         } else if (hand.getItem() instanceof AxeItem) {
             hasPickaxe = false; hasAxe = true;
         } else {
-            // Main vide : on regarde l'inventaire
+            // Empty hand: check inventory
             hasPickaxe = hasToolInInventory(PickaxeItem.class);
             hasAxe = hasToolInInventory(AxeItem.class);
         }
@@ -220,7 +220,7 @@ public class FakePlayerMineGoal extends Goal {
         return bestPos;
     }
 
-    // Vérifie qu'au moins une face du bloc est exposée à l'air (bloc accessible)
+    // Checks that at least one face of the block is exposed to air (block is accessible)
     private boolean isExposed(BlockPos pos) {
         return entity.level().getBlockState(pos.above()).isAir()
             || entity.level().getBlockState(pos.below()).isAir()
@@ -268,7 +268,7 @@ public class FakePlayerMineGoal extends Goal {
 
     private int findBestToolSlot(Class<? extends DiggerItem> toolClass, BlockState state) {
         int bestSlot = -1;
-        float bestScore = 1.0f; // n'équipe que si strictement plus rapide que mains nues
+        float bestScore = 1.0f; // only equip if strictly faster than bare hands
 
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
             ItemStack stack = entity.getInventory().getItem(i);

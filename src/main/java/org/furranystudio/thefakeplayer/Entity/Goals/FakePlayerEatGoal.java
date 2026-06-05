@@ -18,11 +18,11 @@ public class FakePlayerEatGoal extends Goal {
     private ItemStack foodStack = ItemStack.EMPTY;
     private ItemStack savedMainHand = ItemStack.EMPTY;
     private int eatTicks = 0;
-    private static final int EAT_DURATION = 20; // ~1s comme un vrai joueur
+    private static final int EAT_DURATION = 20; // ~1s like a real player
 
     public FakePlayerEatGoal(FakePlayerEntity entity) {
         this.entity = entity;
-        // Flags vides : tourne librement sans bloquer ni être bloqué
+        // Empty flags: runs freely without blocking or being blocked
         this.setFlags(EnumSet.noneOf(Flag.class));
     }
 
@@ -30,7 +30,7 @@ public class FakePlayerEatGoal extends Goal {
     public boolean canUse() {
         float health = entity.getHealth();
         float maxHealth = entity.getMaxHealth();
-        // En combat : mange uniquement si vie ≤ 20%
+        // In combat: eat only if health ≤ 20%
         if (entity.getTarget() != null && health > maxHealth * 0.2f) return false;
         if (health >= maxHealth) return false;
         foodStack = findFood();
@@ -53,14 +53,14 @@ public class FakePlayerEatGoal extends Goal {
     @Override
     public void tick() {
         eatTicks++;
-        entity.setEatAnimTick(eatTicks); // synchronisé vers clients via EntityData
+        entity.setEatAnimTick(eatTicks); // synced to clients via EntityData
 
-        // Son de mastication + particules toutes les 4 ticks pendant l'animation
+        // Chewing sound + particles every 4 ticks during animation
         if (eatTicks % 4 == 0) {
             entity.playSound(SoundEvents.GENERIC_EAT.value(), 0.5F,
                     0.9F + entity.level().random.nextFloat() * 0.2F);
 
-            // Particules pendant la mastication (serveur uniquement)
+            // Particles during chewing (server-side only)
             if (!foodStack.isEmpty() && entity.level() instanceof ServerLevel serverLevel) {
                 var particleData = new ItemParticleOption(ParticleTypes.ITEM, foodStack);
                 double vx = (entity.level().random.nextFloat() - 0.5) * 0.2;
@@ -79,11 +79,11 @@ public class FakePlayerEatGoal extends Goal {
                 entity.heal(food.nutrition());
                 foodStack.shrink(1);
 
-                // Son de fin de repas (rot)
+                // End of meal sound (burp)
                 entity.playSound(SoundEvents.PLAYER_BURP, 0.5F,
                         0.9F + entity.level().random.nextFloat() * 0.2F);
 
-                // Particules d'item autour de la tête
+                // Item particles around the head
                 if (entity.level() instanceof ServerLevel serverLevel) {
                     var particleData = new ItemParticleOption(ParticleTypes.ITEM, particleStack);
                     for (int i = 0; i < 8; i++) {

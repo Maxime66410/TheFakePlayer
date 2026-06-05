@@ -108,12 +108,12 @@ public class FakePlayerWeaponSelectGoal extends Goal {
 
         if (target instanceof Creeper creeper && creeper.getSwellDir() > 0) {
             if (dist < CREEPER_SHIELD_DISTANCE) {
-                // Trop proche pour fuir — lever le bouclier
+                // Too close to flee — raise shield
                 if (hasShield && entity.shieldCooldown <= 0 && !entity.isUsingItem()) {
                     entity.startUsingItem(InteractionHand.OFF_HAND);
                 }
             } else {
-                // Fuir dans la direction opposée au creeper
+                // Flee in the opposite direction from the creeper
                 if (entity.isUsingItem() && entity.getUseItem().getItem() instanceof ShieldItem) {
                     entity.stopUsingItem();
                 }

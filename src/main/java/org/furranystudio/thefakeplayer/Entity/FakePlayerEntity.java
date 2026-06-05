@@ -114,50 +114,50 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     // Tab list / chat
     private boolean hasTabListEntry = false;
     private boolean initialized = false;
-    private boolean profileReady = false; // true quand nom+skin sont chargés (thread terminé)
-    private int chatTimer = 20 * 60 * 3; // premier message après 3 minutes
+    private boolean profileReady = false; // true when name+skin are loaded (thread done)
+    private int chatTimer = 20 * 60 * 3; // first message after 3 minutes
 
-    // Skin Mojang brut (base64 value + signature pour GameProfile)
+    // Raw Mojang skin data (base64 value + signature for GameProfile)
     private String skinTextureValue = null;
     private String skinTextureSignature = null;
     private String skinUrl = "";
 
-    // EntityData pour synchroniser l'URL du skin serveur → clients automatiquement
+    // EntityData to sync the skin URL from server → clients automatically
     private static final EntityDataAccessor<String> SKIN_URL =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.STRING);
     private String lastSkinUrl = "";
 
-    // EntityData pour synchroniser les animations serveur → clients
+    // EntityData to sync animations from server → clients
     private static final EntityDataAccessor<Integer> EAT_ANIM_TICK =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SWING_ANIM_TICK =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
 
-    // Interpolation côté client pour lisser l'animation de swing (60fps)
-    public float oSwingAnimFrac = 0.0F; // valeur tick précédent
-    public float swingAnimFrac = 0.0F;  // valeur tick courant
+    // Client-side interpolation to smooth swing animation (60fps)
+    public float oSwingAnimFrac = 0.0F; // previous tick value
+    public float swingAnimFrac = 0.0F;  // current tick value
 
     private static final String[] CHAT_MESSAGES = {
         "lol",
         "gg",
-        "quelqu'un est là ?",
+        "anyone there?",
         "nice base",
-        "t'es en train de construire quoi ?",
-        "j'ai trouvé des diamants",
+        "what are you building?",
+        "found diamonds",
         "brb",
         "back",
-        "ce seed est ouf",
+        "this seed is insane",
         "...",
-        "je mine un peu",
-        "on se fait une mine ?",
-        "j'ai faim lol",
-        "attention creeper derrière toi",
-        "je vais explorer un peu",
-        "ok je craft",
-        "t'as du bois ?",
-        "j'ai failli mourir",
-        "bien joué",
-        "on est à combien de distance du spawn ?"
+        "mining for a bit",
+        "wanna go mining?",
+        "hungry lol",
+        "watch out creeper behind you",
+        "going exploring for a bit",
+        "ok crafting",
+        "got any wood?",
+        "almost died",
+        "nice one",
+        "how far are we from spawn?"
     };
 
 
@@ -207,7 +207,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public FakePlayerEntity(Level world, double x, double y, double z) {
         super(ModEntities.FAKE_PLAYER_ENTITY.get(), world);
         this.setPos(x, y, z);
-        UpdateEntityProfile(); // Doit être après super() — les field initializers s'exécutent après super() et écraseraient skinTextureValue
+        UpdateEntityProfile(); // Must be after super() — field initializers run after super() and would overwrite skinTextureValue
     }
 
     public FakePlayerEntity(Level world, double x, double y, double z, String playerName) {
@@ -235,19 +235,19 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         builder.define(SWING_ANIM_TICK, 0);
     }
 
-    // Accesseurs synchro animation
+    // Animation sync accessors
     public int getEatAnimTick() { return this.entityData.get(EAT_ANIM_TICK); }
     public void setEatAnimTick(int tick) { this.entityData.set(EAT_ANIM_TICK, tick); }
     public int getSwingAnimTick() { return this.entityData.get(SWING_ANIM_TICK); }
 
-    /** Déclenche l'animation de swing (harvest, attaque…). Durée fixe 10 ticks. */
+    /** Triggers the swing animation (harvest, attack…). Fixed duration of 10 ticks. */
     public void triggerSwingAnim() {
         if (!this.level().isClientSide()) {
             this.entityData.set(SWING_ANIM_TICK, 10);
         }
     }
 
-    // Suppression : retire du tab list + message de déconnexion
+    // Removal: removes from tab list + disconnection message
     @Override
     public void remove(RemovalReason reason) {
         if (!this.level().isClientSide() && hasTabListEntry) {
@@ -258,14 +258,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         super.remove(reason);
     }
 
-    // Construit le packet tab list pour ce fake player via réflexion
-    // Le constructeur public ne prend que Collection<ServerPlayer>, pas List<Entry>
+    // Builds the tab list packet for this fake player via reflection
+    // The public constructor only takes Collection<ServerPlayer>, not List<Entry>
     @SuppressWarnings("unchecked")
     private ClientboundPlayerInfoUpdatePacket buildTabListPacket() {
         try {
             GameProfile profile = new GameProfile(this.getUUID(), this.getName().getString());
 
-            // Ajouter la texture Mojang au profil — signature obligatoire pour que le client l'accepte
+            // Add Mojang texture to profile — signature required for the client to accept it
             if (skinTextureValue != null && skinTextureSignature != null && !skinTextureSignature.isEmpty()) {
                 profile.getProperties().put("textures", new Property(
                     "textures", skinTextureValue, skinTextureSignature
@@ -283,12 +283,12 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                 ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE
             );
 
-            // Le constructeur public exige Collection<ServerPlayer> — on passe une liste vide
-            // via cast non vérifié (safe à runtime grâce à l'erasure Java)
+            // The public constructor requires Collection<ServerPlayer> — we pass an empty list
+            // via unchecked cast (safe at runtime due to Java erasure)
             Collection<ServerPlayer> emptyPlayers = (Collection<ServerPlayer>)(Collection<?>) Collections.emptyList();
             ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(actions, emptyPlayers);
 
-            // On remplace le champ entries avec notre entrée custom (nom officiel Mojang)
+            // Replace the entries field with our custom entry (official Mojang field name)
             java.lang.reflect.Field entriesField = ClientboundPlayerInfoUpdatePacket.class.getDeclaredField("entries");
             entriesField.setAccessible(true);
             entriesField.set(packet, List.of(entry));
@@ -299,7 +299,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         }
     }
 
-    // Envoie le packet d'ajout dans le tab list à tous les joueurs connectés
+    // Sends the add-to-tab-list packet to all connected players
     public void addToTabList() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         ClientboundPlayerInfoUpdatePacket packet = buildTabListPacket();
@@ -308,12 +308,12 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         }
     }
 
-    // Envoie l'entrée tab list à un joueur spécifique (pour les joueurs qui rejoignent après)
+    // Sends the tab list entry to a specific player (for players who join later)
     public void sendTabListEntryTo(ServerPlayer player) {
         player.connection.send(buildTabListPacket());
     }
 
-    // Envoie le packet de retrait du tab list à tous les joueurs connectés
+    // Sends the remove-from-tab-list packet to all connected players
     private void removeFromTabList() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         MinecraftServer server = serverLevel.getServer();
@@ -327,7 +327,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         }
     }
 
-    // Broadcast "joined the game" à tous les joueurs
+    // Broadcast "joined the game" to all players
     private void broadcastJoinMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
@@ -335,7 +335,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         );
     }
 
-    // Broadcast "left the game" à tous les joueurs
+    // Broadcast "left the game" to all players
     private void broadcastLeaveMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
@@ -343,14 +343,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         );
     }
 
-    // Envoie un message aléatoire dans le chat au nom du fake player
+    // Sends a random chat message on behalf of the fake player
     private void sendRandomChatMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         String msg = CHAT_MESSAGES[this.random.nextInt(CHAT_MESSAGES.length)];
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
             Component.literal("<" + this.getName().getString() + "> " + msg), false
         );
-        // Reset timer entre 3 et 10 minutes
+        // Reset timer between 3 and 10 minutes
         chatTimer = 20 * 60 * (3 + this.random.nextInt(8));
     }
 
@@ -362,36 +362,36 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     protected void registerGoals() {
 
         // Add goals to the entity
-        this.goalSelector.addGoal(0, new FloatGoal(this)); // Permet de flotter dans l'eau
+        this.goalSelector.addGoal(0, new FloatGoal(this)); // Float in water
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
-        this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D)); // Permet de se déplacer aléatoirement
-        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Permet de regarder le joueur
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true)); // Permet d'attaquer le joueur
+        this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D)); // Random roaming
+        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true)); // Melee attack
         this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
             return true;
-        })); // Permet de casser les portes
-        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true)); // Permet d'ouvrir les portes
-        this.goalSelector.addGoal(5, new PanicGoal(this, 1.25D)); // Permet de paniquer
-        this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Permet de manger des blocs
+        })); // Break doors
+        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true)); // Open doors
+        this.goalSelector.addGoal(5, new PanicGoal(this, 1.25D)); // Panic
+        this.goalSelector.addGoal(2, new EatBlockGoal(this)); // Eat grass blocks
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<Mob>(this, Mob.class, 10, false, false, this::isHostileMob));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<Animal>(this, Animal.class, 10, false, false, this::isHuntableAnimal));
         this.targetSelector.addGoal(6, new ResetUniversalAngerTargetGoal<>(this, false));
-        this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Permet de se déplacer dans le village
+        this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Move through village
 
         this.setCanPickUpLoot(true);
     }
 
-    // Update the entity's profile — HTTP sur thread séparé pour ne pas bloquer le serveur
+    // Update the entity's profile — HTTP on a separate thread to avoid blocking the server
     private void UpdateEntityProfile()
     {
-        // Pas de nom affiché tant que le profil n'est pas chargé
+        // No name displayed until the profile is loaded
         new Thread(() -> {
             try {
                 if (!hasInternetConnection()) {
@@ -418,12 +418,12 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                         setEntityUUID(finalUUID);
                         profileReady = true;
                         applySkin(finalName, finalSkinData);
-                        // Si tick() n'a pas encore ajouté au tab, on le fait maintenant
+                        // If tick() hasn't added to the tab yet, do it now
                         if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
                     });
                     return;
                 }
-                // Fallback : aucun nom valide en 5 tentatives
+                // Fallback: no valid name found in 5 attempts
                 this.level().getServer().execute(() -> {
                     this.setCustomName(Component.literal("Steve"));
                     profileReady = true;
@@ -437,7 +437,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
     private void UpdateEntityProfile(String playerName)
     {
-        // Nom connu immédiatement → profileReady = true pour que tick() puisse broadcaster le join tout de suite
+        // Name known immediately → profileReady = true so tick() can broadcast the join right away
         this.setCustomName(Component.literal(playerName));
         profileReady = true;
         new Thread(() -> {
@@ -454,7 +454,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                     setEntityName(playerName);
                     setEntityUUID(finalUUID);
                     applySkin(playerName, finalSkinData);
-                    // Si tick() n'a pas encore ajouté au tab (très rare), on le fait maintenant
+                    // If tick() hasn't added to the tab yet (very rare), do it now
                     if (!hasTabListEntry) { addToTabList(); hasTabListEntry = true; broadcastJoinMessage(); }
                 });
             } catch (IOException e) {
@@ -484,14 +484,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
     // Get Custom Skin Location
     public ResourceLocation getCustomSkin() {
-        return customSkin != null ? customSkin : ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID,"textures/entities/basefakeplayer.png");  // Skin par défaut si aucun personnalisé
+        return customSkin != null ? customSkin : ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID,"textures/entities/basefakeplayer.png");  // Default skin if none is set
     }
 
     // Set Custom Skin Location
     public void setCustomSkin(ResourceLocation skin) {
         this.customSkin = skin;
 
-        // Mise à jour de la texture uniquement côté client (Minecraft.getInstance() n'existe pas côté serveur)
+        // Texture update only on client side (Minecraft.getInstance() doesn't exist server-side)
         if (this.level().isClientSide()) {
             ResourceLocation skinLocation = ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "config/thefakeplayer/" + skin.getPath());
             File skinFile = new File(skinLocation.getPath());
@@ -598,7 +598,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         return null;
     }
 
-    // Retourne [skinUrl, base64Value, signature] depuis l'UUID Mojang, ou null si introuvable
+    // Returns [skinUrl, base64Value, signature] from the Mojang UUID, or null if not found
     public static String[] getSkinProperty(String uuid) throws IOException {
         URL url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -636,7 +636,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         return null;
     }
 
-    // Compat : retourne uniquement l'URL du skin (utilisé en interne)
+    // Compat: returns only the skin URL (used internally)
     public static String getSkinURL(String uuid) throws IOException {
         String[] data = getSkinProperty(uuid);
         return data != null ? data[0] : null;
@@ -644,7 +644,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
     // Download and save skin
     public static ResourceLocation downloadAndSaveSkin(String skinURL, String playerName) throws IOException {
-        // Avant de télécharger le skin, vérifier si le dossier skins existe
+        // Before downloading the skin, check if the skins folder exists
         File skinsDir = new File("config/"+Thefakeplayer.MODID+"/skins");
         if (!skinsDir.exists()) {
             skinsDir.mkdirs();
@@ -652,23 +652,22 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         String safePlayerName = playerName.toLowerCase().replaceAll("[^a-z0-9_-]", "_");
 
-        // Vérifier si le skin existe déjà
+        // Check if the skin already exists
         File skinFile = new File(skinsDir, safePlayerName + ".png");
         if (skinFile.exists()) {
             return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
         }
 
-        BufferedImage skinImage = ImageIO.read(new URL(skinURL));  // Télécharger l'image
-        // Convertir le nom du fichier en minuscules et remplacer les espaces par des underscores (_)
-        File newSkinFile = new File("config/" +Thefakeplayer.MODID + "/skins/" + safePlayerName + ".png");  // Créer un fichier pour le skin
-        newSkinFile.getParentFile().mkdirs();  // Créer les répertoires si nécessaire
-        ImageIO.write(skinImage, "png", newSkinFile);  // Sauvegarder l'image sur le disque
+        BufferedImage skinImage = ImageIO.read(new URL(skinURL));
+        File newSkinFile = new File("config/" +Thefakeplayer.MODID + "/skins/" + safePlayerName + ".png");
+        newSkinFile.getParentFile().mkdirs();
+        ImageIO.write(skinImage, "png", newSkinFile);
 
-        // Retourner le chemin du skin dans un format valide pour ResourceLocation
+        // Return the skin path in a valid ResourceLocation format
         return ResourceLocation.fromNamespaceAndPath(Thefakeplayer.MODID, "skins/" + safePlayerName + ".png");
     }
 
-    // Applique les données de skin pré-fetchées (évite un double appel session server)
+    // Applies pre-fetched skin data (avoids a double call to the session server)
     public void applySkin(String playerName, String[] skinData) {
         try {
             skinUrl              = skinData[0];
@@ -680,8 +679,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             // Synchroniser l'URL du skin vers tous les clients via EntityData (MC vanilla)
             this.entityData.set(SKIN_URL, skinUrl);
 
-            // Si déjà dans le tab list, remove + readd pour forcer le client à accepter le nouveau profil
-            // (ADD_PLAYER pour un UUID existant est ignoré par le client)
+            // If already in the tab list, remove + readd to force the client to accept the new profile
+            // (ADD_PLAYER for an existing UUID is ignored by the client)
             if (hasTabListEntry) {
                 removeFromTabList();
                 addToTabList();
@@ -697,7 +696,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             URL url = new URL("https://www.google.com");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("HEAD");
-            connection.setConnectTimeout(3000); // Timeout de 3 secondes
+            connection.setConnectTimeout(3000); // 3-second timeout
             connection.connect();
             return (connection.getResponseCode() == 200);
         } catch (IOException e) {
@@ -707,7 +706,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
     @Override
     protected void actuallyHurt(ServerLevel level, DamageSource source, float amount) {
-        // Vanilla a déjà mis amount=0 si isDamageSourceBlocked()=true — on check isBlocking() directement
+        // Vanilla already set amount=0 if isDamageSourceBlocked()=true — we check isBlocking() directly
         if (this.isBlocking()) {
             Entity attacker = source.getDirectEntity();
             boolean piercing = attacker instanceof net.minecraft.world.entity.projectile.AbstractArrow arr
@@ -888,7 +887,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             String sig = p_34446_.getString("SkinTextureSignature");
             skinTextureSignature = sig.isEmpty() ? null : sig;
             skinUrl = p_34446_.getString("SkinUrl");
-            profileReady = true; // Profil restauré depuis NBT, pas besoin d'attendre le thread
+            profileReady = true; // Profile restored from NBT, no need to wait for the thread
             if (!skinUrl.isEmpty()) {
                 this.entityData.set(SKIN_URL, skinUrl);
             }
@@ -910,7 +909,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
                 Component deathMessage = Component.translatable("death.attack." + p_21014_.getMsgId(), this.getDisplayName());
                 this.level().getServer().getPlayerList().broadcastSystemMessage(deathMessage, false);
             }
-            // "left the game" est géré dans remove() pour couvrir tous les cas
+            // "left the game" is handled in remove() to cover all cases
         }
     }
 
@@ -951,11 +950,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         if (level().isClientSide()) {
             this.idleAnimationState.animateWhen(!isInWaterOrBubble() && !this.walkAnimation.isMoving(), this.tickCount);
 
-            // Interpolation swing : mémoriser l'ancienne valeur avant de mettre à jour
+            // Swing interpolation: save the old value before updating
             oSwingAnimFrac = swingAnimFrac;
             swingAnimFrac = (10 - this.entityData.get(SWING_ANIM_TICK)) / 10.0F;
 
-            // Appliquer le skin dès que l'URL est synchronisée depuis le serveur
+            // Apply skin as soon as the URL is synced from the server
             String skinUrl = this.entityData.get(SKIN_URL);
             if (!skinUrl.isEmpty() && !skinUrl.equals(lastSkinUrl)) {
                 lastSkinUrl = skinUrl;
@@ -979,7 +978,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         super.tick();
 
-        // Décrémenter le compteur de swing (2 par tick → 5 ticks total = 0.25s)
+        // Decrement swing counter (2 per tick → 5 ticks total = 0.25s)
         if (!level().isClientSide()) {
             int swing = this.entityData.get(SWING_ANIM_TICK);
             if (swing > 0) {
@@ -1028,5 +1027,15 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     protected void blockUsingShield(LivingEntity attacker) {
         // Intentionnellement vide : vanilla appellerait attacker.blockedByShield(this)
         // qui finit par appeler this.stopUsingItem() et coupe notre shield
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distToClosestPlayer) {
+        return false;
+    }
+
+    @Override
+    public boolean isPersistenceRequired() {
+        return true;
     }
 }

@@ -28,8 +28,8 @@ public class FakePlayerArmorLayer extends RenderLayer<ArmedEntityRenderState, Fa
         this.innerModel = innerModel;
         this.outerModel = outerModel;
 
-        // RenderLayerParent n'a qu'une méthode : getModel()
-        // On retourne innerModel (déjà synchro avant render) — safe à runtime (erasure)
+        // RenderLayerParent has only one method: getModel()
+        // We return innerModel (already synced before render) — safe at runtime (erasure)
         RenderLayerParent fakeParent = new RenderLayerParent() {
             @Override
             public EntityModel getModel() { return innerModel; }

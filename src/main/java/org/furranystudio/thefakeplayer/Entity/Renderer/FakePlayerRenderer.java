@@ -57,9 +57,9 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
     public void extractRenderState(FakePlayerEntity entity, ArmedEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
         if (renderState instanceof HumanoidRenderState humanoidState) {
-            // Peuple headEquipment/chestEquipment/legsEquipment/feetEquipment + données humanoid de base
+            // Populates headEquipment/chestEquipment/legsEquipment/feetEquipment + base humanoid data
             HumanoidMobRenderer.extractHumanoidRenderState(entity, humanoidState, partialTick, this.itemModelResolver);
-            // Swing interpolé côté client pour lisser les saccades à 60fps
+            // Client-side interpolated swing to smooth out jitter at 60fps
             humanoidState.attackTime = entity.oSwingAnimFrac + (entity.swingAnimFrac - entity.oSwingAnimFrac) * partialTick;
             // Eating : lu depuis entity data (synchro serveur → client)
             int eatTick = entity.getEatAnimTick();
@@ -166,7 +166,7 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             }
 
             RenderSystem.recordRenderCall(() -> {
-                // Applique la texture au manager
+                // Apply texture to manager
                 textureManager.release(textureLocation);
                 textureManager.register(textureLocation, dynamicTexture);
                 dynamicTexture.upload();

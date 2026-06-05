@@ -16,9 +16,9 @@ public class FakePlayerHarvestGoal extends Goal {
     private BlockPos targetCrop = null;
     private int harvestTick = 0;
     private int cooldown = 0;
-    private static final int HARVEST_DELAY = 5;    // ~0.25s, culture se casse quasi instantanément
+    private static final int HARVEST_DELAY = 5;    // ~0.25s, crop breaks almost instantly
     private static final int SEARCH_RANGE = 8;
-    private static final int COOLDOWN_TICKS = 100; // 5s si aucune culture trouvée
+    private static final int COOLDOWN_TICKS = 100; // 5s if no crop found
 
     public FakePlayerHarvestGoal(FakePlayerEntity entity) {
         this.entity = entity;
@@ -50,7 +50,7 @@ public class FakePlayerHarvestGoal extends Goal {
     public void tick() {
         if (targetCrop == null) return;
 
-        // Se repositionner si encore loin de la culture
+        // Reposition if still far from the crop
         if (entity.blockPosition().distSqr(targetCrop) > 4.0) {
             entity.getNavigation().moveTo(
                     targetCrop.getX() + 0.5, targetCrop.getY(), targetCrop.getZ() + 0.5, 1.0);
@@ -64,13 +64,13 @@ public class FakePlayerHarvestGoal extends Goal {
             if (state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
                 entity.triggerSwingAnim();
                 entity.level().destroyBlock(targetCrop, true, entity);
-                // Replanter avec l'état initial de la culture
+                // Replant with the crop's default state
                 if (entity.level().getBlockState(targetCrop).isAir()) {
                     entity.level().setBlock(targetCrop, crop.defaultBlockState(), 3);
                 }
             }
 
-            // Chaînage : chercher la prochaine culture immédiatement
+            // Chain: find next crop immediately
             BlockPos next = findMatureCrop();
             if (next != null) {
                 targetCrop = next;
@@ -78,7 +78,7 @@ public class FakePlayerHarvestGoal extends Goal {
                 entity.getNavigation().moveTo(
                         targetCrop.getX() + 0.5, targetCrop.getY(), targetCrop.getZ() + 0.5, 1.0);
             } else {
-                // Aucune culture trouvée : cooldown puis stop
+                // No crop found: cooldown then stop
                 cooldown = COOLDOWN_TICKS;
                 targetCrop = null;
                 harvestTick = 0;

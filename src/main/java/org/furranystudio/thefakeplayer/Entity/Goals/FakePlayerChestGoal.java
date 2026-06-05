@@ -19,7 +19,7 @@ public class FakePlayerChestGoal extends Goal {
     private BlockPos chestPos = null;
     private int cooldown = 0;
     private int phaseTick = 0;
-    private int phase = 0; // 0=approche, 1=attente ouverture, 2=attente fermeture
+    private int phase = 0; // 0=approach, 1=open wait, 2=close wait
 
     private static final int SEARCH_RANGE = 10;
     private static final int OPEN_WAIT = 20;
@@ -66,14 +66,14 @@ public class FakePlayerChestGoal extends Goal {
                     phaseTick = 0;
                 }
             }
-            case 1 -> { // attente après ouverture
+            case 1 -> { // wait after opening
                 if (++phaseTick >= OPEN_WAIT) {
                     interactWithChest();
                     phase = 2;
                     phaseTick = 0;
                 }
             }
-            case 2 -> { // attente avant fermeture
+            case 2 -> { // wait before closing
                 if (++phaseTick >= CLOSE_WAIT) {
                     closeChest();
                     cooldown = COOLDOWN;
@@ -115,7 +115,7 @@ public class FakePlayerChestGoal extends Goal {
     }
 
     private void takeItems(ChestBlockEntity chest) {
-        // 1. Nourriture en priorité
+        // 1. Food first
         int foodCount = countFoodInInventory();
         if (foodCount < MIN_FOOD_STOCK) {
             for (int i = 0; i < chest.getContainerSize() && foodCount < MIN_FOOD_STOCK; i++) {
@@ -129,7 +129,7 @@ public class FakePlayerChestGoal extends Goal {
             }
         }
 
-        // 2. Outils manquants (catégorie absente de l'inventaire)
+        // 2. Missing tools (category absent from inventory)
         for (int i = 0; i < chest.getContainerSize(); i++) {
             ItemStack stack = chest.getItem(i);
             if (stack.isEmpty() || !(stack.getItem() instanceof DiggerItem) && !(stack.getItem() instanceof SwordItem)) continue;
@@ -140,7 +140,7 @@ public class FakePlayerChestGoal extends Goal {
             }
         }
 
-        // 3. 1-2 items aléatoires
+        // 3. 1-2 random items
         int randomTakes = entity.level().random.nextInt(2) + 1;
         int taken = 0;
         for (int i = 0; i < chest.getContainerSize() && taken < randomTakes; i++) {
@@ -155,7 +155,7 @@ public class FakePlayerChestGoal extends Goal {
     }
 
     private void depositItems(ChestBlockEntity chest) {
-        // Items en excès (> 32 dans un slot)
+        // Excess items (> 32 in a slot)
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
             ItemStack stack = entity.getInventory().getItem(i);
             if (stack.isEmpty() || stack.has(DataComponents.FOOD) || stack.getItem() instanceof DiggerItem) continue;
@@ -166,7 +166,7 @@ public class FakePlayerChestGoal extends Goal {
             }
         }
 
-        // 1-2 items aléatoires non essentiels
+        // 1-2 random non-essential items
         int deposits = entity.level().random.nextInt(2) + 1;
         int done = 0;
         for (int i = 0; i < entity.getInventory().getContainerSize() && done < deposits; i++) {
@@ -180,7 +180,7 @@ public class FakePlayerChestGoal extends Goal {
         }
     }
 
-    // Ajoute un stack dans le coffre, retourne le surplus
+    // Adds a stack to the chest, returns the remainder
     private ItemStack addToChest(ChestBlockEntity chest, ItemStack stack) {
         ItemStack remaining = stack.copy();
         for (int i = 0; i < chest.getContainerSize() && !remaining.isEmpty(); i++) {
@@ -208,7 +208,7 @@ public class FakePlayerChestGoal extends Goal {
         return count;
     }
 
-    // Vérifie si l'inventaire contient déjà un outil de la même catégorie
+    // Checks if the inventory already contains a tool of the same category
     private boolean hasToolCategory(ItemStack chestStack) {
         Item item = chestStack.getItem();
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
