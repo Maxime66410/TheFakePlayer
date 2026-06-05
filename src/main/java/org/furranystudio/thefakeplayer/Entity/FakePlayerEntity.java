@@ -399,6 +399,10 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(3, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors)); // Move through village
 
         this.setCanPickUpLoot(true);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.LAVA, -1.0f);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DAMAGE_FIRE, -1.0f);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DANGER_FIRE, -1.0f);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.DAMAGE_OTHER, -1.0f);
     }
 
     // Update the entity's profile — HTTP on a separate thread to avoid blocking the server
