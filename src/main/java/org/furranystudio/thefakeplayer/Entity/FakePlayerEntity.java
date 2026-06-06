@@ -57,6 +57,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCreeperFleeGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFleeGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerPotionGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerRangedGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
@@ -93,7 +94,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FakePlayerEntity extends PathfinderMob implements NeutralMob, InventoryCarrier {
+public class FakePlayerEntity extends PathfinderMob implements NeutralMob, InventoryCarrier, net.minecraft.world.entity.monster.RangedAttackMob {
 
     // Attributs - Variables
     private static final UniformInt PERSISTENT_ANGER_TIME = TimeUtil.rangeOfSeconds(20, 39);
@@ -384,7 +385,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true)); // Melee attack
+        this.goalSelector.addGoal(2, new FakePlayerRangedGoal(this));
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true)); // Melee attack
         this.goalSelector.addGoal(3, new BreakDoorGoal(this, (HARD) -> {
             return true;
         })); // Break doors
@@ -1066,6 +1068,34 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         if (result) triggerSwingAnim();
         return result;
+    }
+
+    @Override
+    public void performRangedAttack(LivingEntity target, float distanceFactor) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        ItemStack arrowStack = findAndConsumeArrow();
+        if (arrowStack.isEmpty()) return;
+        net.minecraft.world.entity.projectile.Arrow arrow = new net.minecraft.world.entity.projectile.Arrow(
+                serverLevel, this, arrowStack, this.getMainHandItem());
+        double dx = target.getX() - this.getX();
+        double dy = (target.getY() + target.getBbHeight() * 0.33) - arrow.getY();
+        double dz = target.getZ() - this.getZ();
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        arrow.shoot(dx, dy + horizDist * 0.2, dz, 1.6F, 1.0F);
+        serverLevel.addFreshEntity(arrow);
+        triggerSwingAnim();
+    }
+
+    private ItemStack findAndConsumeArrow() {
+        for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
+            ItemStack stack = this.getInventory().getItem(i);
+            if (stack.getItem() instanceof net.minecraft.world.item.ArrowItem) {
+                ItemStack arrow = stack.copyWithCount(1);
+                stack.shrink(1);
+                return arrow;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override

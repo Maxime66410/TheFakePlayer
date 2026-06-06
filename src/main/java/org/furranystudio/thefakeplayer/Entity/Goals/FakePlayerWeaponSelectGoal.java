@@ -49,6 +49,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     @Override
     public boolean canUse() {
         if (entity.getTarget() == null) return false;
+        if (entity.distanceTo(entity.getTarget()) > 8.0) return false;
         if (entity.getHealth() <= entity.getMaxHealth() * CRITICAL_HEALTH_RATIO) return false;
 
         currentContext = getContext(entity.getTarget());
@@ -64,6 +65,7 @@ public class FakePlayerWeaponSelectGoal extends Goal {
     @Override
     public boolean canContinueToUse() {
         if (entity.getTarget() == null) return false;
+        if (entity.distanceTo(entity.getTarget()) > 8.0) return false;
         if (entity.getHealth() <= entity.getMaxHealth() * CRITICAL_HEALTH_RATIO) return false;
         return true;
     }
