@@ -70,13 +70,43 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             }
             // Sinon on laisse les valeurs vanilla (isUsingItem/useItemHand pour le shield)
         }
-        // Arm poses based on entity hand items
-        renderState.rightArmPose = entity.getMainHandItem().isEmpty()
-                ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
-                : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
-        renderState.leftArmPose = entity.getOffhandItem().isEmpty()
-                ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
-                : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+        // Arm poses: bow/crossbow get dedicated draw poses; everything else uses ITEM/EMPTY
+        if (entity.isUsingItem()) {
+            net.minecraft.world.item.Item usingItem = entity.getUseItem().getItem();
+            if (usingItem instanceof net.minecraft.world.item.BowItem) {
+                renderState.rightArmPose = net.minecraft.client.model.HumanoidModel.ArmPose.BOW_AND_ARROW;
+                renderState.leftArmPose = entity.getOffhandItem().isEmpty()
+                        ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                        : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                if (renderState instanceof HumanoidRenderState hs) {
+                    hs.isUsingItem = true;
+                    hs.ticksUsingItem = entity.getTicksUsingItem();
+                    hs.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
+                }
+            } else if (usingItem instanceof net.minecraft.world.item.CrossbowItem) {
+                renderState.rightArmPose = net.minecraft.client.model.HumanoidModel.ArmPose.CROSSBOW_CHARGE;
+                renderState.leftArmPose = net.minecraft.client.model.HumanoidModel.ArmPose.CROSSBOW_CHARGE;
+                if (renderState instanceof HumanoidRenderState hs) {
+                    hs.isUsingItem = true;
+                    hs.ticksUsingItem = entity.getTicksUsingItem();
+                    hs.useItemHand = net.minecraft.world.InteractionHand.MAIN_HAND;
+                }
+            } else {
+                renderState.rightArmPose = entity.getMainHandItem().isEmpty()
+                        ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                        : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                renderState.leftArmPose = entity.getOffhandItem().isEmpty()
+                        ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                        : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+            }
+        } else {
+            renderState.rightArmPose = entity.getMainHandItem().isEmpty()
+                    ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                    : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+            renderState.leftArmPose = entity.getOffhandItem().isEmpty()
+                    ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
+                    : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+        }
     }
 
     @Override

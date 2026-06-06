@@ -1083,7 +1083,6 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         double horizDist = Math.sqrt(dx * dx + dz * dz);
         arrow.shoot(dx, dy + horizDist * 0.2, dz, 1.6F, 1.0F);
         serverLevel.addFreshEntity(arrow);
-        triggerSwingAnim();
     }
 
     private ItemStack findAndConsumeArrow() {

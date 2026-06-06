@@ -72,19 +72,36 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 			this.getParts().leftLeg.zRot = -0.005F;
 		}
 
-		// Arm poses (item held)
-		if (humanoidmodel$armposeright == HumanoidModel.ArmPose.ITEM) {
-			this.getParts().rightArm.xRot = this.getParts().rightArm.xRot * 0.5F - (float)(Math.PI / 10);
-			this.getParts().rightArm.yRot = 0.0F;
-		}
-		if (humanoidmodel$armposeleft == HumanoidModel.ArmPose.ITEM) {
-			this.getParts().leftArm.xRot = this.getParts().leftArm.xRot * 0.5F - (float)(Math.PI / 10);
-			this.getParts().leftArm.yRot = 0.0F;
+		// Arm poses
+		if (humanoidmodel$armposeright == HumanoidModel.ArmPose.BOW_AND_ARROW) {
+			// Right hand holds bow body, left hand pulls the string
+			this.getParts().rightArm.yRot = -0.1F + this.getParts().head.yRot;
+			this.getParts().leftArm.yRot = 0.1F + this.getParts().head.yRot + 0.4F;
+			this.getParts().rightArm.xRot = (float)(-Math.PI / 2) + this.getParts().head.xRot;
+			this.getParts().leftArm.xRot = (float)(-Math.PI / 2) + this.getParts().head.xRot;
+		} else if (humanoidmodel$armposeright == HumanoidModel.ArmPose.CROSSBOW_CHARGE
+				|| humanoidmodel$armposeright == HumanoidModel.ArmPose.CROSSBOW_HOLD) {
+			this.getParts().rightArm.xRot = (float)(-Math.PI / 2) + this.getParts().head.xRot;
+			this.getParts().rightArm.yRot = -0.1F + this.getParts().head.yRot;
+			this.getParts().leftArm.xRot = (float)(-Math.PI / 2) + this.getParts().head.xRot;
+			this.getParts().leftArm.yRot = 0.1F + this.getParts().head.yRot + 0.4F;
+		} else {
+			if (humanoidmodel$armposeright == HumanoidModel.ArmPose.ITEM) {
+				this.getParts().rightArm.xRot = this.getParts().rightArm.xRot * 0.5F - (float)(Math.PI / 10);
+				this.getParts().rightArm.yRot = 0.0F;
+			}
+			if (humanoidmodel$armposeleft == HumanoidModel.ArmPose.ITEM) {
+				this.getParts().leftArm.xRot = this.getParts().leftArm.xRot * 0.5F - (float)(Math.PI / 10);
+				this.getParts().leftArm.yRot = 0.0F;
+			}
 		}
 
-		// Eating animation — arm raised toward face with rhythmic bob (MAIN_HAND only)
+		// Eating animation — arm raised toward face with rhythmic bob (MAIN_HAND only, not bow draw)
 		if (p_370046_ instanceof HumanoidRenderState hs && hs.isUsingItem && hs.ticksUsingItem > 0
-				&& hs.useItemHand == net.minecraft.world.InteractionHand.MAIN_HAND) {
+				&& hs.useItemHand == net.minecraft.world.InteractionHand.MAIN_HAND
+				&& humanoidmodel$armposeright != HumanoidModel.ArmPose.BOW_AND_ARROW
+				&& humanoidmodel$armposeright != HumanoidModel.ArmPose.CROSSBOW_CHARGE
+				&& humanoidmodel$armposeright != HumanoidModel.ArmPose.CROSSBOW_HOLD) {
 			float eatBob = Mth.sin(hs.ticksUsingItem * 1.0F) * 0.12F;
 			this.getParts().rightArm.xRot = -1.4F + eatBob;
 			this.getParts().rightArm.yRot = -0.2F;
