@@ -60,6 +60,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerPotionGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerRangedGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSleepGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -374,6 +375,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         // Add goals to the entity
         this.goalSelector.addGoal(0, new FloatGoal(this)); // Float in water
         this.goalSelector.addGoal(1, new FakePlayerEatGoal(this));
+        this.goalSelector.addGoal(1, new FakePlayerSleepGoal(this)); // Sleep in beds at night
         this.goalSelector.addGoal(1, new FakePlayerCreeperFleeGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerFleeGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerPotionGoal(this));
