@@ -60,6 +60,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerPotionGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerRangedGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerLongDistanceTravelGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWanderGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSleepGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
@@ -143,6 +144,12 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SWING_ANIM_TICK =
         SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.INT);
+
+    // EntityData for fishing state (synced server → client for line rendering)
+    private static final EntityDataAccessor<Boolean> FISHING =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<BlockPos> FISHING_TARGET =
+        SynchedEntityData.defineId(FakePlayerEntity.class, EntityDataSerializers.BLOCK_POS);
 
     // Client-side interpolation to smooth swing animation (60fps)
     public float oSwingAnimFrac = 0.0F; // previous tick value
@@ -244,7 +251,15 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         builder.define(SKIN_URL, "");
         builder.define(EAT_ANIM_TICK, 0);
         builder.define(SWING_ANIM_TICK, 0);
+        builder.define(FISHING, false);
+        builder.define(FISHING_TARGET, BlockPos.ZERO);
     }
+
+    // Fishing state accessors (server → client sync)
+    public boolean isFishingGoalActive() { return this.entityData.get(FISHING); }
+    public void setFishing(boolean v) { this.entityData.set(FISHING, v); }
+    public BlockPos getFishingTarget() { return this.entityData.get(FISHING_TARGET); }
+    public void setFishingTarget(BlockPos pos) { this.entityData.set(FISHING_TARGET, pos.immutable()); }
 
     // Animation sync accessors
     public int getEatAnimTick() { return this.entityData.get(EAT_ANIM_TICK); }
@@ -382,6 +397,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
+        this.goalSelector.addGoal(5, new FakePlayerFishGoal(this)); // Fish in nearby water at night or idle
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));

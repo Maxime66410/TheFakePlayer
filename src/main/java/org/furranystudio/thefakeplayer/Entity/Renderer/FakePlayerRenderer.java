@@ -46,11 +46,12 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             p_174169_.getEquipmentRenderer()
         ));
         this.addLayer(new ItemInHandLayer<>(this));
+        this.addLayer(new FakePlayerFishingLineLayer(this));
     }
 
     @Override
-    public @NotNull HumanoidRenderState createRenderState() {
-        return new HumanoidRenderState();
+    public @NotNull FakePlayerRenderState createRenderState() {
+        return new FakePlayerRenderState();
     }
 
     @Override
@@ -106,6 +107,31 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
             renderState.leftArmPose = entity.getOffhandItem().isEmpty()
                     ? net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY
                     : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+        }
+
+        // Fishing line sync: compute hand world-pos and target offset for the render layer
+        if (renderState instanceof FakePlayerRenderState fps) {
+            fps.isFishing = entity.isFishingGoalActive();
+            if (fps.isFishing) {
+                // Interpolate body rotation and entity position for smooth 60fps line
+                float bodyRad = net.minecraft.util.Mth.lerp(partialTick, entity.yBodyRotO, entity.yBodyRot)
+                        * (float) (Math.PI / 180.0);
+                net.minecraft.world.phys.Vec3 eyePos = entity.getEyePosition(partialTick);
+                double handX = eyePos.x - Math.cos(bodyRad) * 0.35 - Math.sin(bodyRad) * 0.8;
+                double handY = eyePos.y - 0.45;
+                double handZ = eyePos.z - Math.sin(bodyRad) * 0.35 + Math.cos(bodyRad) * 0.8;
+                // Interpolated entity base position (matches what the renderer uses)
+                double entX = net.minecraft.util.Mth.lerp(partialTick, entity.xo, entity.getX());
+                double entY = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY());
+                double entZ = net.minecraft.util.Mth.lerp(partialTick, entity.zo, entity.getZ());
+                fps.fishingHandOffX = (float)(handX - entX);
+                fps.fishingHandOffY = (float)(handY - entY);
+                fps.fishingHandOffZ = (float)(handZ - entZ);
+                net.minecraft.core.BlockPos target = entity.getFishingTarget();
+                fps.fishingLineDX = (float)(target.getX() + 0.5 - handX);
+                fps.fishingLineDY = (float)(target.getY() + 0.13 - handY);
+                fps.fishingLineDZ = (float)(target.getZ() + 0.5 - handZ);
+            }
         }
     }
 
