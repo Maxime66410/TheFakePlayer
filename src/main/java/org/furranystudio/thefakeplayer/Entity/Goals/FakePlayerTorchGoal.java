@@ -9,8 +9,10 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
@@ -37,6 +39,7 @@ public class FakePlayerTorchGoal extends Goal {
     @Override
     public boolean canUse() {
         if (lastPlacedPos != null && entity.position().distanceToSqr(lastPlacedPos) < MIN_DIST_SQ) return false;
+        if (entity.level().isDay() && entity.level().canSeeSky(entity.blockPosition().above())) return false;
         torchSlot = findTorchSlot();
         if (torchSlot < 0) return false;
         if (!isDarkNearby()) return false;
@@ -95,22 +98,27 @@ public class FakePlayerTorchGoal extends Goal {
         Item torchItem = entity.getInventory().getItem(torchSlot).getItem();
         BlockPos feet = entity.blockPosition();
 
-        // Wall preferred: adjacent solid block with sturdy face toward entity, air at feet
-        for (Direction dir : Direction.Plane.HORIZONTAL) {
-            BlockPos wall = feet.relative(dir);
-            Direction faceTowardEntity = dir.getOpposite();
-            if (entity.level().getBlockState(wall).isFaceSturdy(entity.level(), wall, faceTowardEntity)
-                    && entity.level().getBlockState(feet).isAir()) {
-                placementPos = feet;
-                placementState = (torchItem == Items.SOUL_TORCH ? Blocks.SOUL_WALL_TORCH : Blocks.WALL_TORCH)
-                        .defaultBlockState()
-                        .setValue(BlockStateProperties.HORIZONTAL_FACING, faceTowardEntity);
-                return true;
+        // Wall preferred: head level first, then above head, then feet as last resort
+        BlockPos[] wallHeights = { feet.above(), feet.above().above(), feet };
+        for (BlockPos torchPos : wallHeights) {
+            if (hasTorchNearby(torchPos)) return false;
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos wall = torchPos.relative(dir);
+                Direction faceTowardEntity = dir.getOpposite();
+                if (entity.level().getBlockState(wall).isFaceSturdy(entity.level(), wall, faceTowardEntity)
+                        && entity.level().getBlockState(torchPos).isAir()) {
+                    placementPos = torchPos;
+                    placementState = (torchItem == Items.SOUL_TORCH ? Blocks.SOUL_WALL_TORCH : Blocks.WALL_TORCH)
+                            .defaultBlockState()
+                            .setValue(BlockStateProperties.HORIZONTAL_FACING, faceTowardEntity);
+                    return true;
+                }
             }
         }
 
         // Floor fallback: block below has sturdy top face, air at feet
-        if (entity.level().getBlockState(feet.below()).isFaceSturdy(entity.level(), feet.below(), Direction.UP)
+        if (!hasTorchNearby(feet)
+                && entity.level().getBlockState(feet.below()).isFaceSturdy(entity.level(), feet.below(), Direction.UP)
                 && entity.level().getBlockState(feet).isAir()) {
             placementPos = feet;
             placementState = torchItem == Items.SOUL_TORCH
@@ -126,7 +134,10 @@ public class FakePlayerTorchGoal extends Goal {
         BlockPos origin = entity.blockPosition();
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
-                if (entity.level().getMaxLocalRawBrightness(origin.offset(dx, 0, dz)) < 7) return true;
+                BlockPos check = origin.offset(dx, 0, dz);
+                // Dark if globally unlit (no sun, no nearby torch) AND not covered by a block light source
+                if (entity.level().getMaxLocalRawBrightness(check) < 7
+                        && entity.level().getBrightness(LightLayer.BLOCK, check) < 7) return true;
             }
         }
         return false;
@@ -138,6 +149,19 @@ public class FakePlayerTorchGoal extends Goal {
             if (isTorchItem(stack.getItem())) return i;
         }
         return -1;
+    }
+
+    private boolean hasTorchNearby(BlockPos center) {
+        for (int dx = -8; dx <= 8; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -8; dz <= 8; dz++) {
+                    Block b = entity.level().getBlockState(center.offset(dx, dy, dz)).getBlock();
+                    if (b == Blocks.TORCH || b == Blocks.WALL_TORCH
+                            || b == Blocks.SOUL_TORCH || b == Blocks.SOUL_WALL_TORCH) return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean isTorchItem(Item item) {
