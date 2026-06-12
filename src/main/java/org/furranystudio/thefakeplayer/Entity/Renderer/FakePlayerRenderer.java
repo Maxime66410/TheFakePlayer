@@ -109,28 +109,17 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
                     : net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
         }
 
-        // Fishing line sync: compute hand world-pos and target offset for the render layer
+        // Fishing line sync: store target camera-relative position; arm position is resolved in the layer
         if (renderState instanceof FakePlayerRenderState fps) {
             fps.isFishing = entity.isFishingGoalActive();
             if (fps.isFishing) {
-                // Interpolate body rotation and entity position for smooth 60fps line
-                float bodyRad = net.minecraft.util.Mth.lerp(partialTick, entity.yBodyRotO, entity.yBodyRot)
-                        * (float) (Math.PI / 180.0);
-                net.minecraft.world.phys.Vec3 eyePos = entity.getEyePosition(partialTick);
-                double handX = eyePos.x - Math.cos(bodyRad) * 0.35 - Math.sin(bodyRad) * 0.8;
-                double handY = eyePos.y - 0.45;
-                double handZ = eyePos.z - Math.sin(bodyRad) * 0.35 + Math.cos(bodyRad) * 0.8;
-                // Interpolated entity base position (matches what the renderer uses)
-                double entX = net.minecraft.util.Mth.lerp(partialTick, entity.xo, entity.getX());
-                double entY = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY());
-                double entZ = net.minecraft.util.Mth.lerp(partialTick, entity.zo, entity.getZ());
-                fps.fishingHandOffX = (float)(handX - entX);
-                fps.fishingHandOffY = (float)(handY - entY);
-                fps.fishingHandOffZ = (float)(handZ - entZ);
+                net.minecraft.client.Camera camera =
+                        net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera();
+                net.minecraft.world.phys.Vec3 camPos = camera.getPosition();
                 net.minecraft.core.BlockPos target = entity.getFishingTarget();
-                fps.fishingLineDX = (float)(target.getX() + 0.5 - handX);
-                fps.fishingLineDY = (float)(target.getY() + 0.13 - handY);
-                fps.fishingLineDZ = (float)(target.getZ() + 0.5 - handZ);
+                fps.fishingTargetCamX = (float)(target.getX() + 0.5 - camPos.x);
+                fps.fishingTargetCamY = (float)(target.getY() + 1.0 - camPos.y);
+                fps.fishingTargetCamZ = (float)(target.getZ() + 0.5 - camPos.z);
             }
         }
     }

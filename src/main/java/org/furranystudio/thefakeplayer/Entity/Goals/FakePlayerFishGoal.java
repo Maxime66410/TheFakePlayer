@@ -26,13 +26,15 @@ public class FakePlayerFishGoal extends Goal {
     private int fishWaitDuration = 0;
     private int fishWaitTick = 0;
     private int reelTick = 0;
+    private int approachTick = 0;
     private int cooldown = 0;
     private int rodSlot = -1;
     private ItemStack savedMainHand = ItemStack.EMPTY;
     private boolean done = false;
 
     private static final int SEARCH_RANGE = 12;
-    private static final double REACH_DISTANCE_SQ = 2.5 * 2.5;
+    private static final double REACH_DISTANCE_SQ = 4.0 * 4.0;
+    private static final int APPROACH_TIMEOUT = 200;
     private static final int FISH_WAIT_MIN = 600;
     private static final int FISH_WAIT_MAX = 1200;
     private static final int REEL_DURATION = 30;
@@ -66,6 +68,7 @@ public class FakePlayerFishGoal extends Goal {
         phase = Phase.APPROACH;
         fishWaitTick = 0;
         reelTick = 0;
+        approachTick = 0;
         done = false;
         fishWaitDuration = FISH_WAIT_MIN + entity.getRandom().nextInt(FISH_WAIT_MAX - FISH_WAIT_MIN);
         savedMainHand = entity.getMainHandItem().copy();
@@ -93,6 +96,10 @@ public class FakePlayerFishGoal extends Goal {
         if (distSq <= REACH_DISTANCE_SQ) {
             entity.getNavigation().stop();
             phase = Phase.CAST;
+            return;
+        }
+        if (++approachTick >= APPROACH_TIMEOUT) {
+            done = true;
         }
     }
 
@@ -178,6 +185,8 @@ public class FakePlayerFishGoal extends Goal {
         done = false;
         cooldown = COOLDOWN;
     }
+
+    public void resetCooldown() { cooldown = 0; }
 
     private int findRodSlot() {
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {

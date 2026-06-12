@@ -163,6 +163,7 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
         return parts;
     }
 
+    public ModelPart bodyPart()      { return parts.body; }
     public ModelPart headPart()     { return parts.head; }
     public ModelPart torsoPart()    { return parts.torso; }
     public ModelPart rightArmPart() { return parts.rightArm; }

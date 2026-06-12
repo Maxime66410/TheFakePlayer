@@ -24,6 +24,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
@@ -57,7 +58,7 @@ public class FakePlayerCommands {
             Commands.literal("fakeplayer")
                 .executes(context -> {
                     context.getSource().sendSuccess(() -> Component.literal(
-                        "FakePlayer commands: heal, tp, god, debug, inventory, clearinventory, cleartarget, freeze, unfreeze, goals, give <item>, target <entity>"
+                        "FakePlayer commands: heal, tp, god, debug, inventory, clearinventory, cleartarget, freeze, unfreeze, goals, setgoal <goal|none>, give <item>, target <entity>"
                     ), false);
                     return Command.SINGLE_SUCCESS;
                 })
@@ -243,6 +244,54 @@ public class FakePlayerCommands {
                         ));
                         return Command.SINGLE_SUCCESS;
                     })
+                )
+
+                .then(Commands.literal("setgoal")
+                    .then(Commands.argument("goal", StringArgumentType.word())
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                            String arg = StringArgumentType.getString(context, "goal").toLowerCase();
+
+                            if (arg.equals("none") || arg.equals("clear")) {
+                                fp.getGoalSelector().getAvailableGoals().stream()
+                                    .filter(WrappedGoal::isRunning)
+                                    .forEach(WrappedGoal::stop);
+                                context.getSource().sendSuccess(() -> Component.literal("All goals stopped."), false);
+                                return Command.SINGLE_SUCCESS;
+                            }
+
+                            WrappedGoal match = fp.getGoalSelector().getAvailableGoals().stream()
+                                .filter(w -> w.getGoal().getClass().getSimpleName().toLowerCase().contains(arg))
+                                .findFirst()
+                                .orElse(null);
+
+                            if (match == null) {
+                                StringBuilder available = new StringBuilder();
+                                fp.getGoalSelector().getAvailableGoals().forEach(w -> {
+                                    if (available.length() > 0) available.append(", ");
+                                    available.append(w.getGoal().getClass().getSimpleName());
+                                });
+                                return error(context.getSource(), "No goal matching '" + arg + "'. Available: " + available);
+                            }
+
+                            // Reset cooldowns so canUse() can initialize internal state
+                            if (match.getGoal() instanceof FakePlayerFishGoal fishGoal) {
+                                fishGoal.resetCooldown();
+                            }
+                            // Initialize goal state (rodSlot, waterTarget, etc.) without side effects
+                            match.getGoal().canUse();
+
+                            try {
+                                match.start();
+                            } catch (Exception e) {
+                                return error(context.getSource(), "Goal start failed: " + e.getMessage());
+                            }
+                            String name = match.getGoal().getClass().getSimpleName();
+                            context.getSource().sendSuccess(() -> Component.literal("Force-started: " + name), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
                 )
 
                 .then(Commands.literal("target")

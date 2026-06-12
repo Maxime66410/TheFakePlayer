@@ -9,6 +9,8 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.util.Mth;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 public class FakePlayerFishingLineLayer extends RenderLayer<ArmedEntityRenderState, FakePlayerModelWithAnim<FakePlayerEntity>> {
 
@@ -21,34 +23,37 @@ public class FakePlayerFishingLineLayer extends RenderLayer<ArmedEntityRenderSta
                        ArmedEntityRenderState renderState, float yRot, float xRot) {
         if (!(renderState instanceof FakePlayerRenderState fps) || !fps.isFishing) return;
 
+        FakePlayerModelWithAnim<FakePlayerEntity> model = this.getParentModel();
+
         poseStack.pushPose();
-        // Translate to the hand position (relative to entity origin)
-        poseStack.translate(fps.fishingHandOffX, fps.fishingHandOffY, fps.fishingHandOffZ);
+
+        // Navigate model hierarchy to the rod tip (body → rightArm → hand offset)
+        model.bodyPart().translateAndRotate(poseStack);
+        model.rightArmPart().translateAndRotate(poseStack);
+        // rod tip offset relative to rightArm in model units
+        poseStack.translate(-1.0f / 16.0f, -8.0f / 16.0f, -4.0f / 16.0f);
+
+        // Invert the current cumulative pose matrix to map camera-relative coords → current model space.
+        // This handles entity rotation, renderer scale/flip, and arm pose in one step.
+        Matrix4f invPose = new Matrix4f(poseStack.last().pose()).invert();
+        Vector4f targetLocal = invPose.transform(
+                new Vector4f(fps.fishingTargetCamX, fps.fishingTargetCamY, fps.fishingTargetCamZ, 1.0f));
+
+        float dx = targetLocal.x;
+        float dy = targetLocal.y;
+        float dz = targetLocal.z;
+        float len = Mth.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.001f) {
+            poseStack.popPose();
+            return;
+        }
+        float nx = dx / len, ny = dy / len, nz = dz / len;
 
         VertexConsumer vc = buffer.getBuffer(RenderType.lineStrip());
         PoseStack.Pose pose = poseStack.last();
-
-        // 16 segments — same catenary technique as vanilla FishingHookRenderer
-        for (int i = 0; i <= 16; i++) {
-            stringVertex(fps.fishingLineDX, fps.fishingLineDY, fps.fishingLineDZ,
-                    vc, pose, i / 16f, (i + 1) / 16f);
-        }
+        vc.addVertex(pose, 0.0f, 0.0f, 0.0f).setColor(-16777216).setNormal(pose, nx, ny, nz);
+        vc.addVertex(pose, dx, dy, dz).setColor(-16777216).setNormal(pose, nx, ny, nz);
 
         poseStack.popPose();
-    }
-
-    // Straight line segment from hand to water target — no catenary offset needed here
-    private static void stringVertex(float dx, float dy, float dz,
-                                     VertexConsumer vc, PoseStack.Pose pose,
-                                     float t0, float t1) {
-        float x0 = dx * t0;
-        float y0 = dy * t0;
-        float z0 = dz * t0;
-        float nx = dx * t1 - x0;
-        float ny = dy * t1 - y0;
-        float nz = dz * t1 - z0;
-        float len = Mth.sqrt(nx * nx + ny * ny + nz * nz);
-        if (len > 0.0f) { nx /= len; ny /= len; nz /= len; }
-        vc.addVertex(pose, x0, y0, z0).setColor(-16777216).setNormal(pose, nx, ny, nz);
     }
 }
