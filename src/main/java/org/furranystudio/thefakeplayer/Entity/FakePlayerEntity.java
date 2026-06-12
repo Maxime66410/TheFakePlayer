@@ -121,6 +121,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int shieldCooldown = 0;
     public boolean godMode = false;
     public int suppressTargetingTicks = 0;
+    private int sneakTick = 0;
 
     private static final ResourceLocation CRIT_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("thefakeplayer", "crit_hit");
 
@@ -1054,7 +1055,45 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             if (shieldCooldown > 0) shieldCooldown--;
             if (suppressTargetingTicks > 0) suppressTargetingTicks--;
             if (godMode) this.setHealth(this.getMaxHealth() * 10);
+            updateCrouching();
         }
+    }
+
+    private void updateCrouching() {
+        if (isNearCliffEdge()) {
+            if (!this.isShiftKeyDown()) this.setShiftKeyDown(true);
+            this.getNavigation().stop();
+        } else if (this.getTarget() != null) {
+            sneakTick--;
+            if (sneakTick <= 0) {
+                boolean crouch = !this.isShiftKeyDown();
+                this.setShiftKeyDown(crouch);
+                // Crouch for 10-30t, stand for 20-60t
+                sneakTick = crouch ? 10 + this.random.nextInt(20) : 160 + this.random.nextInt(160);
+            }
+        } else {
+            if (this.isShiftKeyDown()) this.setShiftKeyDown(false);
+            sneakTick = 0;
+        }
+    }
+
+    private boolean isNearCliffEdge() {
+        double mx = this.getDeltaMovement().x;
+        double mz = this.getDeltaMovement().z;
+        if (mx * mx + mz * mz < 0.00001) return false;
+        BlockPos feet = this.blockPosition();
+        int[] dxArr = {1, -1, 0, 0};
+        int[] dzArr = {0, 0, 1, -1};
+        for (int i = 0; i < 4; i++) {
+            int dx = dxArr[i], dz = dzArr[i];
+            BlockPos ahead = feet.offset(dx, 0, dz);
+            if (this.level().getBlockState(ahead).isAir()
+                    && this.level().getBlockState(ahead.below()).isAir()
+                    && this.level().getBlockState(ahead.below().below()).isAir()) {
+                if (mx * dx + mz * dz > 0.01) return true;
+            }
+        }
+        return false;
     }
 
     @Override

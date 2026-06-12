@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import org.furranystudio.thefakeplayer.Entity.Anim.FakePlayerAnimList;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.furranystudio.thefakeplayer.Entity.Renderer.FakePlayerRenderState;
 import org.furranystudio.thefakeplayer.Thefakeplayer;
 
 public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityModel<ArmedEntityRenderState> implements ArmedModel {
@@ -50,6 +51,13 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 		this.root().getAllParts().forEach(ModelPart::resetPose);
 		HumanoidModel.ArmPose humanoidmodel$armposeleft = p_370046_.leftArmPose;
 		HumanoidModel.ArmPose humanoidmodel$armposeright = p_370046_.rightArmPose;
+
+		// Crouching pose: lean body forward and shift down, compensate head to keep world-space look angle
+		boolean crouching = p_370046_ instanceof FakePlayerRenderState fps && fps.isCrouching;
+		if (crouching) {
+			this.getParts().body.xRot = 0.5F;
+			this.getParts().body.y = 3.2F;
+		}
 
 		// Look at direction or target
 		this.getParts().head.xRot = p_370046_.xRot * (float) (Math.PI / 180.0);
@@ -119,10 +127,20 @@ public class FakePlayerModelWithAnim<T extends FakePlayerEntity> extends EntityM
 		if (p_370046_ instanceof HumanoidRenderState humanoidState && humanoidState.attackTime > 0.0F) {
 			this.setupAttackAnimation(p_370046_, humanoidState.attackTime);
 		}
+
+		// Applied after all anims: legs stay vertical, arms lean only halfway
+		if (crouching) {
+			this.getParts().leftLeg.xRot -= 0.5F;
+			this.getParts().rightLeg.xRot -= 0.5F;
+			this.getParts().leftArm.xRot -= 0.25F;
+			this.getParts().rightArm.xRot -= 0.25F;
+		}
 	}
 
 	@Override
 	public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
+		// Apply body root transform first so items follow body lean (e.g. crouching)
+		this.getParts().body.translateAndRotate(poseStack);
 		ModelPart handPart = arm == HumanoidArm.RIGHT ? this.getParts().rightArm : this.getParts().leftArm;
 		handPart.translateAndRotate(poseStack);
 	}
