@@ -112,6 +112,17 @@ public class FakePlayerRenderer extends MobRenderer<FakePlayerEntity, ArmedEntit
         // Fishing line sync: store target camera-relative position; arm position is resolved in the layer
         if (renderState instanceof FakePlayerRenderState fps) {
             fps.isFishing = entity.isFishingGoalActive();
+            // Re-bake right hand with cast rod model when fishing
+            if (fps.isFishing && entity.getMainHandItem().getItem() == net.minecraft.world.item.Items.FISHING_ROD) {
+                net.minecraft.world.item.ItemStack castRod = entity.getMainHandItem().copy();
+                castRod.set(net.minecraft.core.component.DataComponents.CUSTOM_MODEL_DATA,
+                    new net.minecraft.world.item.component.CustomModelData(
+                        java.util.List.of(), java.util.List.of(true), java.util.List.of(), java.util.List.of()));
+                this.itemModelResolver.updateForLiving(
+                    renderState.rightHandItem, castRod,
+                    net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
+                    false, entity);
+            }
             if (fps.isFishing) {
                 net.minecraft.client.Camera camera =
                         net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera();
