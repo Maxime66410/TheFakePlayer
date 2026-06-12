@@ -31,7 +31,7 @@ public class FakePlayerFishingLineLayer extends RenderLayer<ArmedEntityRenderSta
         model.bodyPart().translateAndRotate(poseStack);
         model.rightArmPart().translateAndRotate(poseStack);
         // rod tip offset relative to rightArm in model units
-        poseStack.translate(-1.0f / 16.0f, -8.0f / 16.0f, -4.0f / 16.0f);
+        poseStack.translate(-1.0f / 16.0f, 6.0f / 16.0f, -12.0f / 16.0f);
 
         // Invert the current cumulative pose matrix to map camera-relative coords → current model space.
         // This handles entity rotation, renderer scale/flip, and arm pose in one step.

@@ -188,6 +188,14 @@ public class FakePlayerFishGoal extends Goal {
 
     public void resetCooldown() { cooldown = 0; }
 
+    public boolean forceInit() {
+        cooldown = 0;
+        rodSlot = findRodSlot();
+        if (rodSlot < 0) return false;
+        waterTargetPos = findWaterTarget();
+        return waterTargetPos != null && edgePos != null;
+    }
+
     private int findRodSlot() {
         for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
             if (entity.getInventory().getItem(i).getItem() == Items.FISHING_ROD) return i;

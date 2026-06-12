@@ -24,6 +24,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
@@ -274,13 +275,22 @@ public class FakePlayerCommands {
                                 return error(context.getSource(), "No goal matching '" + arg + "'. Available: " + available);
                             }
 
-                            // Reset cooldown via reflection so canUse() can run its block/position scan
-                            resetGoalCooldown(match.getGoal());
-                            // Initialize internal state (pos, slots, etc.)
-                            boolean ready = match.getGoal().canUse();
-                            if (!ready) {
-                                return error(context.getSource(), "Goal conditions not met (no suitable block or target found nearby).");
+                            // Initialize internal state, bypassing cooldown and goal-specific guards
+                            if (match.getGoal() instanceof FakePlayerFishGoal fishGoal) {
+                                // forceInit bypasses target check; ignore return — let start() catch real failures
+                                fishGoal.forceInit();
+                            } else {
+                                resetGoalCooldown(match.getGoal());
+                                boolean ready = match.getGoal().canUse();
+                                if (!ready) {
+                                    return error(context.getSource(), "Goal conditions not met (no suitable block or target found nearby).");
+                                }
                             }
+                            // Stop only goals that conflict on the same flags (MOVE, LOOK, etc.)
+                            java.util.EnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> flags = match.getGoal().getFlags();
+                            fp.getGoalSelector().getAvailableGoals().stream()
+                                .filter(w -> w.isRunning() && w.getGoal().getFlags().stream().anyMatch(flags::contains))
+                                .forEach(WrappedGoal::stop);
                             try {
                                 match.start();
                             } catch (Exception e) {
