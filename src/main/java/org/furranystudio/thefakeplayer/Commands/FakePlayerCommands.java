@@ -24,7 +24,6 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
-import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
@@ -275,13 +274,13 @@ public class FakePlayerCommands {
                                 return error(context.getSource(), "No goal matching '" + arg + "'. Available: " + available);
                             }
 
-                            // Reset cooldowns so canUse() can initialize internal state
-                            if (match.getGoal() instanceof FakePlayerFishGoal fishGoal) {
-                                fishGoal.resetCooldown();
+                            // Reset cooldown via reflection so canUse() can run its block/position scan
+                            resetGoalCooldown(match.getGoal());
+                            // Initialize internal state (pos, slots, etc.)
+                            boolean ready = match.getGoal().canUse();
+                            if (!ready) {
+                                return error(context.getSource(), "Goal conditions not met (no suitable block or target found nearby).");
                             }
-                            // Initialize goal state (rodSlot, waterTarget, etc.) without side effects
-                            match.getGoal().canUse();
-
                             try {
                                 match.start();
                             } catch (Exception e) {
@@ -336,6 +335,14 @@ public class FakePlayerCommands {
             source.sendFailure(Component.literal("Failed to spawn FakePlayer: " + e.getMessage()));
         }
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void resetGoalCooldown(net.minecraft.world.entity.ai.goal.Goal goal) {
+        try {
+            java.lang.reflect.Field f = goal.getClass().getDeclaredField("cooldown");
+            f.setAccessible(true);
+            f.setInt(goal, 0);
+        } catch (Exception ignored) {}
     }
 
     private static int error(CommandSourceStack source, String message) {
