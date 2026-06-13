@@ -66,6 +66,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerTorchGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerOrganizeInventoryGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerAnvilRepairGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSmeltGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -407,6 +408,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(9, new FakePlayerOrganizeInventoryGoal(this));
         this.goalSelector.addGoal(8, new FakePlayerAnvilRepairGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
+        this.goalSelector.addGoal(7, new FakePlayerSmeltGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
