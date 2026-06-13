@@ -81,6 +81,11 @@ public class FakePlayerSleepGoal extends Goal {
             entity.getNavigation().stop();
             entity.startSleeping(bedPos);
             sleeping = true;
+            entity.sendContextualMessage(
+                "thefakeplayer.chat.sleeping.0",
+                "thefakeplayer.chat.sleeping.1",
+                "thefakeplayer.chat.sleeping.2"
+            );
         }
     }
 
@@ -88,6 +93,11 @@ public class FakePlayerSleepGoal extends Goal {
     public void stop() {
         if (entity.isSleeping()) {
             entity.stopSleeping();
+            entity.sendContextualMessage(
+                "thefakeplayer.chat.waking.0",
+                "thefakeplayer.chat.waking.1",
+                "thefakeplayer.chat.waking.2"
+            );
         }
         sleeping = false;
         bedPos = null;

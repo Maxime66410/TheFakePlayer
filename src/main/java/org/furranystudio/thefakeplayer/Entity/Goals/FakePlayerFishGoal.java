@@ -111,6 +111,10 @@ public class FakePlayerFishGoal extends Goal {
         entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                 SoundEvents.FISHING_BOBBER_THROW, SoundSource.PLAYERS,
                 0.5f, 0.4f / (entity.getRandom().nextFloat() * 0.4f + 0.8f));
+        entity.sendContextualMessage(
+            "thefakeplayer.chat.fishing.0",
+            "thefakeplayer.chat.fishing.1"
+        );
         phase = Phase.WAIT;
     }
 
@@ -162,6 +166,10 @@ public class FakePlayerFishGoal extends Goal {
         if (reelTick == 8) {
             ItemStack fish = new ItemStack(entity.getRandom().nextBoolean() ? Items.COD : Items.SALMON);
             entity.getInventory().addItem(fish);
+            entity.sendContextualMessage(
+                "thefakeplayer.chat.fish_caught.0",
+                "thefakeplayer.chat.fish_caught.1"
+            );
         }
 
         if (reelTick >= REEL_DURATION) {

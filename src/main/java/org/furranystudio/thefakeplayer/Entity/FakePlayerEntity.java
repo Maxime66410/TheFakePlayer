@@ -133,6 +133,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     private boolean initialized = false;
     private boolean profileReady = false; // true when name+skin are loaded (thread done)
     private int chatTimer = 20 * 60 * 3; // first message after 3 minutes
+    private int chatContextCooldown = 0;
 
     // Raw Mojang skin data (base64 value + signature for GameProfile)
     private String skinTextureValue = null;
@@ -161,6 +162,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public float swingAnimFrac = 0.0F;  // current tick value
 
     private static final int CHAT_IDLE_COUNT = 20;
+    private static final int CHAT_HORROR_COUNT = 3;
 
 
     // Constructeurs
@@ -358,11 +360,28 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     // Sends a random idle chat message on behalf of the fake player
     private void sendRandomChatMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
-        Component msg = Component.translatable("thefakeplayer.chat.idle." + this.random.nextInt(CHAT_IDLE_COUNT));
+        Component msg;
+        if (this.random.nextInt(20) == 0) {
+            msg = Component.translatable("thefakeplayer.chat.horror." + this.random.nextInt(CHAT_HORROR_COUNT));
+        } else {
+            msg = Component.translatable("thefakeplayer.chat.idle." + this.random.nextInt(CHAT_IDLE_COUNT));
+        }
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
             Component.literal("<" + this.getName().getString() + "> ").append(msg), false
         );
         chatTimer = 20 * 60 * (3 + this.random.nextInt(8));
+    }
+
+    public void sendContextualMessage(String... keys) {
+        if (chatContextCooldown > 0) return;
+        if (this.random.nextFloat() < 0.4f) return;
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        String key = keys[this.random.nextInt(keys.length)];
+        serverLevel.getServer().getPlayerList().broadcastSystemMessage(
+            Component.literal("<" + this.getName().getString() + "> ")
+                .append(Component.translatable(key)), false
+        );
+        chatContextCooldown = 20 * 20 + this.random.nextInt(20 * 20); // 20-40 seconds
     }
 
     public net.minecraft.world.entity.ai.goal.GoalSelector getGoalSelector() { return this.goalSelector; }
@@ -757,6 +776,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             }
         }
 
+        if (amount > 4.0f) {
+            sendContextualMessage(
+                "thefakeplayer.chat.hurt.0",
+                "thefakeplayer.chat.hurt.1",
+                "thefakeplayer.chat.hurt.2"
+            );
+        }
+
         Entity attacker = source.getEntity();
         if (attacker instanceof LivingEntity le) {
             this.setTarget(le);
@@ -1036,6 +1063,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             } else {
                 sendRandomChatMessage();
             }
+            if (chatContextCooldown > 0) chatContextCooldown--;
         }
 
         super.tick();
@@ -1136,6 +1164,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             ItemStack weapon = this.getMainHandItem();
             if (!weapon.isEmpty() && weapon.isDamageableItem()) {
                 weapon.hurtAndBreak(1, level, null, item -> this.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY));
+            }
+            if (target instanceof LivingEntity le && le.isDeadOrDying()) {
+                sendContextualMessage(
+                    "thefakeplayer.chat.killed_mob.0",
+                    "thefakeplayer.chat.killed_mob.1",
+                    "thefakeplayer.chat.killed_mob.2",
+                    "thefakeplayer.chat.killed_mob.3"
+                );
             }
         }
         return result;

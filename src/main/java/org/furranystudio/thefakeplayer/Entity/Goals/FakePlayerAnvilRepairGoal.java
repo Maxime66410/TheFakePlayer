@@ -98,6 +98,10 @@ public class FakePlayerAnvilRepairGoal extends Goal {
 
         entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                 SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        entity.sendContextualMessage(
+            "thefakeplayer.chat.repairing.0",
+            "thefakeplayer.chat.repairing.1"
+        );
     }
 
     // Returns the most-damaged repairable item (inventory + armor slots), null if nothing needs repair

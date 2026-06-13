@@ -102,6 +102,10 @@ public class FakePlayerSmeltGoal extends Goal {
             if (oreSlot >= 0) {
                 ItemStack ore = entity.getInventory().getItem(oreSlot);
                 be.setItem(0, ore.split(Math.min(ore.getCount(), 8)));
+                entity.sendContextualMessage(
+                    "thefakeplayer.chat.smelting.0",
+                    "thefakeplayer.chat.smelting.1"
+                );
             }
         }
     }

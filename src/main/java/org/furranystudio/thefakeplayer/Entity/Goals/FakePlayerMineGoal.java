@@ -126,7 +126,13 @@ public class FakePlayerMineGoal extends Goal {
                 BlockState state = entity.level().getBlockState(targetBlock);
                 if (!state.isAir()) {
                     entity.triggerSwingAnim();
+                    boolean precious = isPreciousOre(state);
                     serverLevel.destroyBlock(targetBlock, true, entity);
+                    if (precious) entity.sendContextualMessage(
+                        "thefakeplayer.chat.found_precious.0",
+                        "thefakeplayer.chat.found_precious.1",
+                        "thefakeplayer.chat.found_precious.2"
+                    );
                     ItemStack tool = entity.getMainHandItem();
                     if (!tool.isEmpty() && tool.getItem() instanceof DiggerItem) {
                         tool.hurtAndBreak(1, serverLevel, null, item -> entity.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY));
@@ -313,5 +319,16 @@ public class FakePlayerMineGoal extends Goal {
             }
         }
         return 0;
+    }
+
+    private static final Set<Block> PRECIOUS_ORE_BLOCKS = Set.of(
+        Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE,
+        Blocks.EMERALD_ORE, Blocks.DEEPSLATE_EMERALD_ORE,
+        Blocks.GOLD_ORE, Blocks.DEEPSLATE_GOLD_ORE, Blocks.NETHER_GOLD_ORE,
+        Blocks.ANCIENT_DEBRIS
+    );
+
+    private boolean isPreciousOre(BlockState state) {
+        return PRECIOUS_ORE_BLOCKS.contains(state.getBlock());
     }
 }

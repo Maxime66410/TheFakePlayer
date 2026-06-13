@@ -25,6 +25,47 @@
   "thefakeplayer.chat.idle.18": "bien joué",
   "thefakeplayer.chat.idle.19": "on est à combien du spawn ?",
 
+  "thefakeplayer.chat.horror.0": "...",
+  "thefakeplayer.chat.horror.1": "je te vois",
+  "thefakeplayer.chat.horror.2": "pourquoi tu es là",
+
+  "thefakeplayer.chat.found_precious.0": "omg des diamants !!",
+  "thefakeplayer.chat.found_precious.1": "de l'or !!",
+  "thefakeplayer.chat.found_precious.2": "enfin des minerais",
+
+  "thefakeplayer.chat.killed_mob.0": "gg",
+  "thefakeplayer.chat.killed_mob.1": "trop facile",
+  "thefakeplayer.chat.killed_mob.2": "lol",
+  "thefakeplayer.chat.killed_mob.3": "rip",
+
+  "thefakeplayer.chat.hurt.0": "aïe",
+  "thefakeplayer.chat.hurt.1": "j'ai failli mourir lol",
+  "thefakeplayer.chat.hurt.2": "ça fait mal",
+
+  "thefakeplayer.chat.eating.0": "j'avais vraiment faim lol",
+  "thefakeplayer.chat.eating.1": "enfin",
+  "thefakeplayer.chat.eating.2": "j'en avais besoin",
+
+  "thefakeplayer.chat.sleeping.0": "bonne nuit",
+  "thefakeplayer.chat.sleeping.1": "afk",
+  "thefakeplayer.chat.sleeping.2": "zzz",
+
+  "thefakeplayer.chat.waking.0": "de retour",
+  "thefakeplayer.chat.waking.1": "matin",
+  "thefakeplayer.chat.waking.2": "ok c'est parti",
+
+  "thefakeplayer.chat.fishing.0": "je pêche un peu",
+  "thefakeplayer.chat.fishing.1": "c'est relaxant",
+
+  "thefakeplayer.chat.fish_caught.0": "j'en ai eu un !",
+  "thefakeplayer.chat.fish_caught.1": "poisson :)",
+
+  "thefakeplayer.chat.repairing.0": "je répare mon stuff",
+  "thefakeplayer.chat.repairing.1": "j'ai failli casser ma pioche lol",
+
+  "thefakeplayer.chat.smelting.0": "je fonds des trucs",
+  "thefakeplayer.chat.smelting.1": "besoin de plus de lingots",
+
   "thefakeplayer.command.not_found": "Aucun FakePlayer trouvé.",
   "thefakeplayer.command.removed": "FakePlayer retiré.",
   "thefakeplayer.command.healed": "FakePlayer soigné à %s PV.",

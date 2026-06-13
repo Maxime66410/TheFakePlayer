@@ -92,6 +92,11 @@ public class FakePlayerEatGoal extends Goal {
                 // End of meal sound (burp)
                 entity.playSound(SoundEvents.PLAYER_BURP, 0.5F,
                         0.9F + entity.level().random.nextFloat() * 0.2F);
+                entity.sendContextualMessage(
+                    "thefakeplayer.chat.eating.0",
+                    "thefakeplayer.chat.eating.1",
+                    "thefakeplayer.chat.eating.2"
+                );
 
                 // Item particles around the head
                 if (entity.level() instanceof ServerLevel serverLevel) {
