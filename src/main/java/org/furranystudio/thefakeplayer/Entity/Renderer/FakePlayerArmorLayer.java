@@ -45,7 +45,11 @@ public class FakePlayerArmorLayer extends RenderLayer<ArmedEntityRenderState, Fa
         FakePlayerModelWithAnim<?> ourModel = this.getParentModel();
         syncModelTransforms(ourModel, innerModel);
         syncModelTransforms(ourModel, outerModel);
+        // Apply body root transform (crouching lean/offset) before rendering armor parts
+        poseStack.pushPose();
+        ourModel.bodyPart().translateAndRotate(poseStack);
         armorLayer.render(poseStack, bufferSource, packedLight, humanoidState, yRot, xRot);
+        poseStack.popPose();
     }
 
     private void syncModelTransforms(FakePlayerModelWithAnim<?> source, HumanoidModel target) {
