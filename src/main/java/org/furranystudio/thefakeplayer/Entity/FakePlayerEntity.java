@@ -1093,9 +1093,9 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         for (int i = 0; i < 4; i++) {
             int dx = dxArr[i], dz = dzArr[i];
             if (mx * dx + mz * dz <= 0.01) continue;
-            // Find ground level at the adjacent position (scan down up to 16 blocks)
-            int aheadGroundY = entityGroundY;
-            for (int d = 1; d <= 16; d++) {
+            // Find ground level at adjacent position — start at entityGroundY so adjacent solid blocks are caught first
+            int aheadGroundY = entityGroundY - 17; // default: huge drop if nothing found (pure void)
+            for (int d = 0; d <= 16; d++) {
                 BlockPos check = new BlockPos(feet.getX() + dx, entityGroundY - d, feet.getZ() + dz);
                 if (!this.level().getBlockState(check).isAir()) {
                     aheadGroundY = entityGroundY - d;
