@@ -65,6 +65,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSleepGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerTorchGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerOrganizeInventoryGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerAnvilRepairGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -404,6 +405,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerTorchGoal(this));
         this.goalSelector.addGoal(9, new FakePlayerOrganizeInventoryGoal(this));
+        this.goalSelector.addGoal(8, new FakePlayerAnvilRepairGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
@@ -764,6 +766,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         }
 
         super.actuallyHurt(level, source, amount);
+
+        // Damage equipped armor pieces proportional to incoming damage (mirrors vanilla logic)
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            ItemStack armor = this.getItemBySlot(slot);
+            if (!armor.isEmpty()) {
+                armor.hurtAndBreak((int) Math.max(1, amount / 4), level, null, item -> this.setItemSlot(slot, ItemStack.EMPTY));
+            }
+        }
 
         Entity attacker = source.getEntity();
         if (attacker instanceof LivingEntity le) {
@@ -1138,7 +1148,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             }
         }
 
-        if (result) triggerSwingAnim();
+        if (result) {
+            triggerSwingAnim();
+            // Damage the weapon in main hand (1 durability per hit, like a vanilla player)
+            ItemStack weapon = this.getMainHandItem();
+            if (!weapon.isEmpty() && weapon.isDamageableItem()) {
+                weapon.hurtAndBreak(1, level, null, item -> this.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY));
+            }
+        }
         return result;
     }
 

@@ -127,6 +127,10 @@ public class FakePlayerMineGoal extends Goal {
                 if (!state.isAir()) {
                     entity.triggerSwingAnim();
                     serverLevel.destroyBlock(targetBlock, true, entity);
+                    ItemStack tool = entity.getMainHandItem();
+                    if (!tool.isEmpty() && tool.getItem() instanceof DiggerItem) {
+                        tool.hurtAndBreak(1, serverLevel, null, item -> entity.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY));
+                    }
                 }
             }
 
