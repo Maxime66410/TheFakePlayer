@@ -64,6 +64,7 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSleepGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerTorchGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerOrganizeInventoryGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -402,6 +403,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(5, new FakePlayerFishGoal(this)); // Fish in nearby water at night or idle
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerTorchGoal(this));
+        this.goalSelector.addGoal(9, new FakePlayerOrganizeInventoryGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
