@@ -1060,6 +1060,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     }
 
     private void updateCrouching() {
+        if (!this.onGround() || this.isInWater() || this.isInLava()) {
+            if (this.isShiftKeyDown()) this.setShiftKeyDown(false);
+            sneakTick = 0;
+            return;
+        }
         if (isNearCliffEdge()) {
             if (!this.isShiftKeyDown()) this.setShiftKeyDown(true);
             this.getNavigation().stop();
@@ -1082,16 +1087,22 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         double mz = this.getDeltaMovement().z;
         if (mx * mx + mz * mz < 0.00001) return false;
         BlockPos feet = this.blockPosition();
+        int entityGroundY = feet.getY() - 1;
         int[] dxArr = {1, -1, 0, 0};
         int[] dzArr = {0, 0, 1, -1};
         for (int i = 0; i < 4; i++) {
             int dx = dxArr[i], dz = dzArr[i];
-            BlockPos ahead = feet.offset(dx, 0, dz);
-            if (this.level().getBlockState(ahead).isAir()
-                    && this.level().getBlockState(ahead.below()).isAir()
-                    && this.level().getBlockState(ahead.below().below()).isAir()) {
-                if (mx * dx + mz * dz > 0.01) return true;
+            if (mx * dx + mz * dz <= 0.01) continue;
+            // Find ground level at the adjacent position (scan down up to 16 blocks)
+            int aheadGroundY = entityGroundY;
+            for (int d = 1; d <= 16; d++) {
+                BlockPos check = new BlockPos(feet.getX() + dx, entityGroundY - d, feet.getZ() + dz);
+                if (!this.level().getBlockState(check).isAir()) {
+                    aheadGroundY = entityGroundY - d;
+                    break;
+                }
             }
+            if (entityGroundY - aheadGroundY >= 4) return true;
         }
         return false;
     }
