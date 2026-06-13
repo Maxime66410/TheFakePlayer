@@ -47,9 +47,9 @@ public class FakePlayerCommands {
             Commands.literal("stopfakeplayer")
                 .executes(context -> {
                     FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                    if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                    if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                     fp.remove(Entity.RemovalReason.DISCARDED);
-                    context.getSource().sendSuccess(() -> Component.literal("FakePlayer removed."), false);
+                    context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.removed"), false);
                     return Command.SINGLE_SUCCESS;
                 })
         );
@@ -57,18 +57,16 @@ public class FakePlayerCommands {
         dispatcher.register(
             Commands.literal("fakeplayer")
                 .executes(context -> {
-                    context.getSource().sendSuccess(() -> Component.literal(
-                        "FakePlayer commands: heal, tp, god, debug, inventory, clearinventory, cleartarget, freeze, unfreeze, goals, setgoal <goal|none>, give <item>, target <entity>"
-                    ), false);
+                    context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.help"), false);
                     return Command.SINGLE_SUCCESS;
                 })
 
                 .then(Commands.literal("heal")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.setHealth(fp.getMaxHealth());
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer healed to " + fp.getMaxHealth() + " HP."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.healed", fp.getMaxHealth()), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -76,10 +74,10 @@ public class FakePlayerCommands {
                 .then(Commands.literal("tp")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         Player player = context.getSource().getPlayerOrException();
                         fp.teleportTo(player.getX(), player.getY(), player.getZ());
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer teleported to your position."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.teleported"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -87,9 +85,9 @@ public class FakePlayerCommands {
                 .then(Commands.literal("god")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.godMode = !fp.godMode;
-                        context.getSource().sendSuccess(() -> Component.literal("God mode " + (fp.godMode ? "enabled" : "disabled") + "."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable(fp.godMode ? "thefakeplayer.command.god_enabled" : "thefakeplayer.command.god_disabled"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -97,7 +95,7 @@ public class FakePlayerCommands {
                 .then(Commands.literal("debug")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
 
                         String targetInfo = fp.getTarget() != null
                             ? fp.getTarget().getName().getString() + " (" + fp.getTarget().getType().toShortString() + ")"
@@ -131,7 +129,7 @@ public class FakePlayerCommands {
                 .then(Commands.literal("inventory")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
 
                         StringBuilder sb = new StringBuilder("=== FakePlayer Inventory: " + fp.getName().getString() + " ===");
                         int count = 0;
@@ -152,9 +150,9 @@ public class FakePlayerCommands {
                 .then(Commands.literal("clearinventory")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.getInventory().clearContent();
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer inventory cleared."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.inventory_cleared"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -162,10 +160,10 @@ public class FakePlayerCommands {
                 .then(Commands.literal("cleartarget")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.setTarget(null);
                         fp.suppressTargetingTicks = 100;
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer target cleared (suppressed for 5s)."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.target_cleared"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -173,9 +171,9 @@ public class FakePlayerCommands {
                 .then(Commands.literal("freeze")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.setNoAi(true);
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer AI frozen."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.ai_frozen"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -183,9 +181,9 @@ public class FakePlayerCommands {
                 .then(Commands.literal("unfreeze")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         fp.setNoAi(false);
-                        context.getSource().sendSuccess(() -> Component.literal("FakePlayer AI resumed."), false);
+                        context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.ai_resumed"), false);
                         return Command.SINGLE_SUCCESS;
                     })
                 )
@@ -193,7 +191,7 @@ public class FakePlayerCommands {
                 .then(Commands.literal("goals")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
 
                         StringBuilder sb = new StringBuilder("=== FakePlayer Goals: " + fp.getName().getString() + " ===");
                         fp.getGoalSelector().getAvailableGoals().stream()
@@ -219,13 +217,13 @@ public class FakePlayerCommands {
                     .then(Commands.argument("item", ItemArgument.item(buildContext))
                         .executes(context -> {
                             FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                            if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                             ItemStack stack = ItemArgument.getItem(context, "item").createItemStack(1, false);
                             ItemStack leftover = fp.getInventory().addItem(stack);
                             if (leftover.isEmpty()) {
-                                context.getSource().sendSuccess(() -> Component.literal("Gave " + stack.getHoverName().getString() + " to FakePlayer."), false);
+                                context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.gave_item", stack.getHoverName()), false);
                             } else {
-                                context.getSource().sendSuccess(() -> Component.literal("Inventory full, item could not be added."), false);
+                                context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.inventory_full"), false);
                             }
                             return Command.SINGLE_SUCCESS;
                         })
@@ -235,9 +233,9 @@ public class FakePlayerCommands {
                 .then(Commands.literal("inventoryui")
                     .executes(context -> {
                         FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                        if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                         Player player = context.getSource().getPlayerOrException();
-                        if (!(player instanceof ServerPlayer serverPlayer)) return error(context.getSource(), "Must be run by a player.");
+                        if (!(player instanceof ServerPlayer serverPlayer)) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_player"));
                         serverPlayer.openMenu(new SimpleMenuProvider(
                             (id, inv, p) -> new FakePlayerInventoryMenu(id, inv, fp),
                             fp.getName()
@@ -250,14 +248,14 @@ public class FakePlayerCommands {
                     .then(Commands.argument("goal", StringArgumentType.word())
                         .executes(context -> {
                             FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                            if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                             String arg = StringArgumentType.getString(context, "goal").toLowerCase();
 
                             if (arg.equals("none") || arg.equals("clear")) {
                                 fp.getGoalSelector().getAvailableGoals().stream()
                                     .filter(WrappedGoal::isRunning)
                                     .forEach(WrappedGoal::stop);
-                                context.getSource().sendSuccess(() -> Component.literal("All goals stopped."), false);
+                                context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.goals_stopped"), false);
                                 return Command.SINGLE_SUCCESS;
                             }
 
@@ -272,7 +270,7 @@ public class FakePlayerCommands {
                                     if (available.length() > 0) available.append(", ");
                                     available.append(w.getGoal().getClass().getSimpleName());
                                 });
-                                return error(context.getSource(), "No goal matching '" + arg + "'. Available: " + available);
+                                return error(context.getSource(), Component.translatable("thefakeplayer.command.no_goal_match", arg, available.toString()));
                             }
 
                             // Initialize internal state, bypassing cooldown and goal-specific guards
@@ -283,7 +281,7 @@ public class FakePlayerCommands {
                                 resetGoalCooldown(match.getGoal());
                                 boolean ready = match.getGoal().canUse();
                                 if (!ready) {
-                                    return error(context.getSource(), "Goal conditions not met (no suitable block or target found nearby).");
+                                    return error(context.getSource(), Component.translatable("thefakeplayer.command.goal_not_met"));
                                 }
                             }
                             // Stop only goals that conflict on the same flags (MOVE, LOOK, etc.)
@@ -294,10 +292,10 @@ public class FakePlayerCommands {
                             try {
                                 match.start();
                             } catch (Exception e) {
-                                return error(context.getSource(), "Goal start failed: " + e.getMessage());
+                                return error(context.getSource(), Component.translatable("thefakeplayer.command.goal_start_failed", e.getMessage()));
                             }
                             String name = match.getGoal().getClass().getSimpleName();
-                            context.getSource().sendSuccess(() -> Component.literal("Force-started: " + name), false);
+                            context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.goal_started", name), false);
                             return Command.SINGLE_SUCCESS;
                         })
                     )
@@ -307,11 +305,11 @@ public class FakePlayerCommands {
                     .then(Commands.argument("entity", EntityArgument.entity())
                         .executes(context -> {
                             FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
-                            if (fp == null) return error(context.getSource(), "No FakePlayer found.");
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
                             Entity target = EntityArgument.getEntity(context, "entity");
-                            if (!(target instanceof LivingEntity living)) return error(context.getSource(), "Target must be a living entity.");
+                            if (!(target instanceof LivingEntity living)) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_living"));
                             fp.setTarget(living);
-                            context.getSource().sendSuccess(() -> Component.literal("FakePlayer is now targeting " + target.getName().getString() + "."), false);
+                            context.getSource().sendSuccess(() -> Component.translatable("thefakeplayer.command.targeting", target.getName()), false);
                             return Command.SINGLE_SUCCESS;
                         })
                     )
@@ -330,7 +328,7 @@ public class FakePlayerCommands {
         ServerLevel world = source.getLevel();
         for (Entity entity : world.getEntities().getAll()) {
             if (entity instanceof FakePlayerEntity fp) {
-                source.sendSuccess(() -> Component.literal(fp.getName().getString() + " is already here."), false);
+                source.sendSuccess(() -> Component.translatable("thefakeplayer.command.already_here", fp.getName()), false);
                 return Command.SINGLE_SUCCESS;
             }
         }
@@ -342,7 +340,7 @@ public class FakePlayerCommands {
             fakePlayer.setPos(player.getX(), player.getY(), player.getZ());
             world.addFreshEntity(fakePlayer);
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to spawn FakePlayer: " + e.getMessage()));
+            source.sendFailure(Component.translatable("thefakeplayer.command.spawn_failed", e.getMessage()));
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -355,8 +353,8 @@ public class FakePlayerCommands {
         } catch (Exception ignored) {}
     }
 
-    private static int error(CommandSourceStack source, String message) {
-        source.sendFailure(Component.literal(message));
+    private static int error(CommandSourceStack source, Component message) {
+        source.sendFailure(message);
         return 0;
     }
 }

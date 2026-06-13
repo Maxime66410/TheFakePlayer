@@ -160,28 +160,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public float oSwingAnimFrac = 0.0F; // previous tick value
     public float swingAnimFrac = 0.0F;  // current tick value
 
-    private static final String[] CHAT_MESSAGES = {
-        "lol",
-        "gg",
-        "anyone there?",
-        "nice base",
-        "what are you building?",
-        "found diamonds",
-        "brb",
-        "back",
-        "this seed is insane",
-        "...",
-        "mining for a bit",
-        "wanna go mining?",
-        "hungry lol",
-        "watch out creeper behind you",
-        "going exploring for a bit",
-        "ok crafting",
-        "got any wood?",
-        "almost died",
-        "nice one",
-        "how far are we from spawn?"
-    };
+    private static final int CHAT_IDLE_COUNT = 20;
 
 
     // Constructeurs
@@ -362,7 +341,8 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     private void broadcastJoinMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
-            Component.literal("§e" + this.getName().getString() + " joined the game"), false
+            Component.translatable("thefakeplayer.event.joined", this.getName())
+                .withStyle(net.minecraft.ChatFormatting.YELLOW), false
         );
     }
 
@@ -370,18 +350,18 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     private void broadcastLeaveMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
-            Component.literal("§e" + this.getName().getString() + " left the game"), false
+            Component.translatable("thefakeplayer.event.left", this.getName())
+                .withStyle(net.minecraft.ChatFormatting.YELLOW), false
         );
     }
 
-    // Sends a random chat message on behalf of the fake player
+    // Sends a random idle chat message on behalf of the fake player
     private void sendRandomChatMessage() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
-        String msg = CHAT_MESSAGES[this.random.nextInt(CHAT_MESSAGES.length)];
+        Component msg = Component.translatable("thefakeplayer.chat.idle." + this.random.nextInt(CHAT_IDLE_COUNT));
         serverLevel.getServer().getPlayerList().broadcastSystemMessage(
-            Component.literal("<" + this.getName().getString() + "> " + msg), false
+            Component.literal("<" + this.getName().getString() + "> ").append(msg), false
         );
-        // Reset timer between 3 and 10 minutes
         chatTimer = 20 * 60 * (3 + this.random.nextInt(8));
     }
 
