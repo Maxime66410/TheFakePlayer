@@ -67,6 +67,10 @@ import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerWeaponSelectGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerOrganizeInventoryGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerAnvilRepairGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSmeltGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerBuildGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerBridgeGoal;
+import org.furranystudio.thefakeplayer.Entity.Build.BaseRecord;
+import org.furranystudio.thefakeplayer.Entity.Build.ConstructionTask;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
@@ -125,6 +129,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public boolean godMode = false;
     public int suppressTargetingTicks = 0;
     private int sneakTick = 0;
+
+    // Construction state
+    private final java.util.List<BaseRecord> knownBases = new java.util.ArrayList<>();
+    @javax.annotation.Nullable
+    private ConstructionTask activeTask = null;
 
     private static final ResourceLocation CRIT_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("thefakeplayer", "crit_hit");
 
@@ -387,6 +396,42 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public net.minecraft.world.entity.ai.goal.GoalSelector getGoalSelector() { return this.goalSelector; }
     public net.minecraft.world.entity.ai.goal.GoalSelector getTargetSelector() { return this.targetSelector; }
 
+    // Construction accessors
+    public java.util.List<BaseRecord> getKnownBases() { return knownBases; }
+
+    public void addBase(BaseRecord base) { knownBases.add(base); }
+
+    public @javax.annotation.Nullable ConstructionTask getActiveTask() { return activeTask; }
+
+    public void setActiveTask(@javax.annotation.Nullable ConstructionTask task) { this.activeTask = task; }
+
+    public boolean hasBaseNearby(double maxDistSq) {
+        BlockPos pos = this.blockPosition();
+        for (BaseRecord base : knownBases) {
+            if (base.getCenter().distSqr(pos) <= maxDistSq) return true;
+        }
+        return false;
+    }
+
+    public @javax.annotation.Nullable BaseRecord getNearestBase() {
+        BlockPos pos = this.blockPosition();
+        BaseRecord nearest = null;
+        double best = Double.MAX_VALUE;
+        for (BaseRecord base : knownBases) {
+            double d = base.getCenter().distSqr(pos);
+            if (d < best) { best = d; nearest = base; }
+        }
+        return nearest;
+    }
+
+    @Override
+    protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(net.minecraft.world.level.Level level) {
+        net.minecraft.world.entity.ai.navigation.GroundPathNavigation nav =
+            new net.minecraft.world.entity.ai.navigation.GroundPathNavigation(this, level);
+        nav.setCanOpenDoors(true);
+        return nav;
+    }
+
     // Methods - Entity for FakePlayerEntity
     @Override
     protected void registerGoals() {
@@ -399,9 +444,11 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(1, new FakePlayerFleeGoal(this));
         this.goalSelector.addGoal(1, new FakePlayerPotionGoal(this));
         this.goalSelector.addGoal(2, new FakePlayerWeaponSelectGoal(this));
+        this.goalSelector.addGoal(4, new FakePlayerBridgeGoal(this));
         this.goalSelector.addGoal(4, new FakePlayerHarvestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerChestGoal(this));
         this.goalSelector.addGoal(5, new FakePlayerFishGoal(this)); // Fish in nearby water at night or idle
+        this.goalSelector.addGoal(6, new FakePlayerBuildGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerMineGoal(this));
         this.goalSelector.addGoal(6, new FakePlayerTorchGoal(this));
         this.goalSelector.addGoal(9, new FakePlayerOrganizeInventoryGoal(this));
@@ -959,6 +1006,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         ListTag listTag = new ListTag();
         this.save(listTag);
         p_34458_.put("Inventory", listTag);
+
+        // Save known bases
+        ListTag basesTag = new ListTag();
+        for (BaseRecord base : knownBases) basesTag.add(base.save());
+        p_34458_.put("KnownBases", basesTag);
+
+        // Save active construction task
+        if (activeTask != null) p_34458_.put("ActiveTask", activeTask.save());
     }
 
     // Read from save data
@@ -984,6 +1039,14 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         // Load the inventory
         ListTag listTag = p_34446_.getList("Inventory", 10);
         this.load(listTag);
+
+        // Load known bases
+        knownBases.clear();
+        ListTag basesTag = p_34446_.getList("KnownBases", 10);
+        for (int i = 0; i < basesTag.size(); i++) knownBases.add(BaseRecord.load(basesTag.getCompound(i)));
+
+        // Load active construction task
+        activeTask = p_34446_.contains("ActiveTask") ? ConstructionTask.load(p_34446_.getCompound("ActiveTask")) : null;
     }
 
     @Override

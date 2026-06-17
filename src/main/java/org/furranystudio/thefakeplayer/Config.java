@@ -19,6 +19,18 @@ import java.util.stream.Collectors;
 public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
+    public static final ForgeConfigSpec.IntValue BUILD_BLOCKS_PER_SECOND = BUILDER
+        .comment("How many blocks the fake player places per second during construction (1-20)")
+        .defineInRange("buildBlocksPerSecond", 10, 7, 20);
+
+    public static final ForgeConfigSpec.IntValue NEW_BASE_DISTANCE = BUILDER
+        .comment("Distance in blocks before the fake player decides to build a new base")
+        .defineInRange("newBaseDistance", 1000, 64, 10000);
+
+    public static final ForgeConfigSpec.IntValue ABANDON_BUILD_DISTANCE = BUILDER
+        .comment("Distance in blocks at which the fake player abandons an in-progress construction")
+        .defineInRange("abandonBuildDistance", 300, 32, 2000);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     private static boolean validateItemName(final Object obj) {

@@ -7,6 +7,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import org.furranystudio.thefakeplayer.Config;
+import org.furranystudio.thefakeplayer.Entity.Build.BaseRecord;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.EnumSet;
@@ -114,6 +116,17 @@ public class FakePlayerSleepGoal extends Goal {
     }
 
     private BlockPos findFreeBed() {
+        // Prefer the bed at the nearest known base (if within new-base distance)
+        BaseRecord nearest = entity.getNearestBase();
+        if (nearest != null && nearest.getBedPos() != null) {
+            long maxDistSq = (long) Config.NEW_BASE_DISTANCE.get() * Config.NEW_BASE_DISTANCE.get();
+            if (nearest.getCenter().distSqr(entity.blockPosition()) <= maxDistSq
+                    && isBedFree(nearest.getBedPos())) {
+                return nearest.getBedPos();
+            }
+        }
+
+        // Fallback: scan nearby area for any free bed
         BlockPos origin = entity.blockPosition();
         for (BlockPos pos : BlockPos.betweenClosed(
                 origin.offset(-SEARCH_RANGE, -3, -SEARCH_RANGE),

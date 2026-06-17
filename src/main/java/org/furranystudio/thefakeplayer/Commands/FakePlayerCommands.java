@@ -23,11 +23,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.furranystudio.thefakeplayer.Entity.Build.BaseRecord;
+import org.furranystudio.thefakeplayer.Entity.Build.ConstructionTask;
+import org.furranystudio.thefakeplayer.Entity.Build.HardcodedShelterBuilder;
+import org.furranystudio.thefakeplayer.Entity.Build.StructureBlueprint;
+import org.furranystudio.thefakeplayer.Entity.Build.StructureRegistry;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerFishGoal;
+import org.furranystudio.thefakeplayer.network.BuildVisualizePacket;
+import org.furranystudio.thefakeplayer.network.NetworkHandler;
 
 @Mod.EventBusSubscriber
 public class FakePlayerCommands {
+
+    // Tracks which players currently have the build visualizer active
+    private static final java.util.Set<java.util.UUID> visualizingPlayers = new java.util.HashSet<>();
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -301,6 +311,203 @@ public class FakePlayerCommands {
                     )
                 )
 
+                // ── /fakeplayer build ────────────────────────────────────────────────
+                .then(Commands.literal("build")
+                    .executes(context -> {
+                        FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                        return cmdBuildStatus(context.getSource(), fp);
+                    })
+                    .then(Commands.literal("status")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            return cmdBuildStatus(context.getSource(), fp);
+                        })
+                    )
+                    .then(Commands.literal("cancel")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            ConstructionTask task = fp.getActiveTask();
+                            if (task == null) return error(context.getSource(), Component.literal("No active construction task."));
+                            task.setAbandoned(true);
+                            fp.setActiveTask(null);
+                            context.getSource().sendSuccess(() -> Component.literal("Construction cancelled."), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("resume")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            ConstructionTask task = fp.getActiveTask();
+                            if (task == null) return error(context.getSource(), Component.literal("No construction task to resume."));
+                            task.setAbandoned(false);
+                            context.getSource().sendSuccess(() -> Component.literal("Construction task unmarked as abandoned — will resume on next goal tick."), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("tp")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            ConstructionTask task = fp.getActiveTask();
+                            if (task == null) return error(context.getSource(), Component.literal("No active construction task."));
+                            Player player = context.getSource().getPlayerOrException();
+                            net.minecraft.core.BlockPos o = task.getOrigin();
+                            player.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
+                            context.getSource().sendSuccess(() -> Component.literal("Teleported to task origin " + o.toShortString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("random")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            StructureBlueprint bp = StructureRegistry.get().getRandomBlueprint(fp.getRandom());
+                            if (bp == null) return error(context.getSource(), Component.literal("No blueprints loaded in registry."));
+                            fp.setActiveTask(new ConstructionTask(fp.blockPosition(), bp.getId()));
+                            context.getSource().sendSuccess(() -> Component.literal("Queued random build: " + bp.getId()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("hardcoded")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            net.minecraft.world.level.block.Block mat = HardcodedShelterBuilder.chooseMaterial(fp.getInventory());
+                            if (mat == null) return error(context.getSource(), Component.literal("Not enough building materials in inventory."));
+                            StructureBlueprint bp = HardcodedShelterBuilder.build(mat);
+                            StructureRegistry.get().registerRuntime(bp);
+                            fp.setActiveTask(new ConstructionTask(fp.blockPosition(), bp.getId()));
+                            context.getSource().sendSuccess(() -> Component.literal("Queued hardcoded shelter build at " + fp.blockPosition().toShortString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("visualize")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            Player player = context.getSource().getPlayerOrException();
+                            if (!(player instanceof ServerPlayer serverPlayer))
+                                return error(context.getSource(), Component.literal("Must be run by a player."));
+                            return cmdBuildVisualize(context.getSource(), fp, serverPlayer);
+                        })
+                    )
+                    .then(Commands.argument("id", StringArgumentType.word())
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            String id = StringArgumentType.getString(context, "id");
+                            StructureBlueprint bp = StructureRegistry.get().getBlueprintById(id);
+                            if (bp == null) return error(context.getSource(), Component.literal("Blueprint not found: " + id + ". Use /fakeplayer schematics list to see available ones."));
+                            fp.setActiveTask(new ConstructionTask(fp.blockPosition(), bp.getId()));
+                            context.getSource().sendSuccess(() -> Component.literal("Queued build: " + id + " at " + fp.blockPosition().toShortString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                )
+
+                // ── /fakeplayer bases ─────────────────────────────────────────────────
+                .then(Commands.literal("bases")
+                    .then(Commands.literal("list")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            java.util.List<BaseRecord> bases = fp.getKnownBases();
+                            if (bases.isEmpty()) { context.getSource().sendSuccess(() -> Component.literal("No known bases."), false); return Command.SINGLE_SUCCESS; }
+                            StringBuilder sb = new StringBuilder("=== Known Bases (" + bases.size() + ") ===");
+                            for (int i = 0; i < bases.size(); i++) {
+                                BaseRecord b = bases.get(i);
+                                sb.append("\n[").append(i).append("] center=").append(b.getCenter().toShortString())
+                                  .append(" bed=").append(b.getBedPos() != null ? b.getBedPos().toShortString() : "none")
+                                  .append(" complete=").append(b.isComplete());
+                            }
+                            context.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("clear")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            fp.getKnownBases().clear();
+                            context.getSource().sendSuccess(() -> Component.literal("All known bases cleared."), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("nearest")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            BaseRecord nearest = fp.getNearestBase();
+                            if (nearest == null) return error(context.getSource(), Component.literal("No known bases."));
+                            Player player = context.getSource().getPlayerOrException();
+                            net.minecraft.core.BlockPos c = nearest.getCenter();
+                            player.teleportTo(c.getX() + 0.5, c.getY(), c.getZ() + 0.5);
+                            context.getSource().sendSuccess(() -> Component.literal("Teleported to nearest base at " + c.toShortString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("add")
+                        .executes(context -> {
+                            FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                            if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                            BaseRecord base = new BaseRecord(fp.blockPosition());
+                            base.setComplete(true);
+                            fp.addBase(base);
+                            context.getSource().sendSuccess(() -> Component.literal("Added base at " + fp.blockPosition().toShortString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                )
+
+                // ── /fakeplayer schematics ────────────────────────────────────────────
+                .then(Commands.literal("schematics")
+                    .then(Commands.literal("list")
+                        .executes(context -> {
+                            java.util.Map<String, StructureBlueprint> all = StructureRegistry.get().getAll();
+                            if (all.isEmpty()) { context.getSource().sendSuccess(() -> Component.literal("No blueprints loaded."), false); return Command.SINGLE_SUCCESS; }
+                            StringBuilder sb = new StringBuilder("=== Loaded Blueprints (" + all.size() + ") ===");
+                            for (StructureBlueprint bp : all.values()) {
+                                sb.append("\n- ").append(bp.getId())
+                                  .append(" (").append(bp.getWidth()).append("x").append(bp.getHeight()).append("x").append(bp.getDepth())
+                                  .append(", ").append(bp.getBlocks().size()).append(" blocks)");
+                            }
+                            context.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                    .then(Commands.literal("reload")
+                        .executes(context -> {
+                            StructureRegistry.get().reload();
+                            int count = StructureRegistry.get().getAll().size();
+                            context.getSource().sendSuccess(() -> Component.literal("Schematics reloaded. " + count + " blueprint(s) loaded."), false);
+                            return Command.SINGLE_SUCCESS;
+                        })
+                    )
+                )
+
+                // ── /fakeplayer bridge ────────────────────────────────────────────────
+                .then(Commands.literal("bridge")
+                    .executes(context -> {
+                        FakePlayerEntity fp = findFakePlayer(context.getSource().getLevel());
+                        if (fp == null) return error(context.getSource(), Component.translatable("thefakeplayer.command.not_found"));
+                        fp.getGoalSelector().getAvailableGoals().stream()
+                            .filter(w -> w.getGoal() instanceof org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerBridgeGoal)
+                            .findFirst()
+                            .ifPresentOrElse(w -> {
+                                w.getGoal().getFlags().forEach(f -> fp.getGoalSelector().getAvailableGoals().stream()
+                                    .filter(o -> o.isRunning() && o.getGoal().getFlags().contains(f))
+                                    .forEach(net.minecraft.world.entity.ai.goal.WrappedGoal::stop));
+                                w.start();
+                                context.getSource().sendSuccess(() -> Component.literal("BridgeGoal force-started."), false);
+                            }, () -> context.getSource().sendFailure(Component.literal("BridgeGoal not found.")));
+                        return Command.SINGLE_SUCCESS;
+                    })
+                )
+
                 .then(Commands.literal("target")
                     .then(Commands.argument("entity", EntityArgument.entity())
                         .executes(context -> {
@@ -315,6 +522,73 @@ public class FakePlayerCommands {
                     )
                 )
         );
+    }
+
+    private static int cmdBuildStatus(CommandSourceStack source, FakePlayerEntity fp) {
+        ConstructionTask task = fp.getActiveTask();
+        if (task == null) {
+            source.sendSuccess(() -> Component.literal("No active construction task."), false);
+            return Command.SINGLE_SUCCESS;
+        }
+        StructureBlueprint bp = StructureRegistry.get().getBlueprintById(task.getBlueprintId());
+        int total = bp != null ? bp.getBlocks().size() : -1;
+        int placed = task.getPlacedIndices().size();
+        String progress = total >= 0 ? placed + "/" + total : placed + "/? (blueprint not in registry)";
+        String msg = "=== Build Status ===" +
+            "\nBlueprint : " + task.getBlueprintId() +
+            "\nOrigin    : " + task.getOrigin().toShortString() +
+            "\nProgress  : " + progress + " blocks" +
+            "\nAbandoned : " + task.isAbandoned();
+        source.sendSuccess(() -> Component.literal(msg), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int cmdBuildVisualize(CommandSourceStack source, FakePlayerEntity fp, ServerPlayer serverPlayer) {
+        java.util.UUID uid = serverPlayer.getUUID();
+        if (visualizingPlayers.remove(uid)) {
+            NetworkHandler.sendVisualize(serverPlayer, new BuildVisualizePacket(false, java.util.List.of(), java.util.List.of()));
+            source.sendSuccess(() -> Component.literal("Build visualizer disabled."), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        ConstructionTask task = fp.getActiveTask();
+        if (task == null) return error(source, Component.literal("No active construction task to visualize."));
+        StructureBlueprint bp = StructureRegistry.get().getBlueprintById(task.getBlueprintId());
+        if (bp == null) return error(source, Component.literal("Blueprint not in registry: " + task.getBlueprintId()));
+
+        java.util.List<net.minecraft.core.BlockPos> pending = new java.util.ArrayList<>();
+        java.util.List<net.minecraft.core.BlockPos> missing = new java.util.ArrayList<>();
+        net.minecraft.core.BlockPos origin = task.getOrigin();
+        net.minecraft.world.SimpleContainer inv = fp.getInventory();
+
+        for (int i = 0; i < bp.getBlocks().size(); i++) {
+            if (task.getPlacedIndices().contains(i)) continue;
+            StructureBlueprint.PlacementEntry entry = bp.getBlocks().get(i);
+            net.minecraft.core.BlockPos worldPos = origin.offset(entry.offset());
+            net.minecraft.world.item.Item needed = visualizeBlockToItem(entry.state().getBlock());
+            boolean has = needed != net.minecraft.world.item.Items.AIR && visualizeHasItem(inv, needed);
+            if (has) pending.add(worldPos); else missing.add(worldPos);
+        }
+
+        visualizingPlayers.add(uid);
+        final int p = pending.size(), m = missing.size();
+        NetworkHandler.sendVisualize(serverPlayer, new BuildVisualizePacket(true, pending, missing));
+        source.sendSuccess(() -> Component.literal("Build visualizer enabled: " + p + " to place (white), " + m + " missing (red). Run again to toggle off."), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static net.minecraft.world.item.Item visualizeBlockToItem(net.minecraft.world.level.block.Block block) {
+        if (block == net.minecraft.world.level.block.Blocks.WALL_TORCH) return net.minecraft.world.item.Items.TORCH;
+        if (block == net.minecraft.world.level.block.Blocks.SOUL_WALL_TORCH) return net.minecraft.world.item.Items.SOUL_TORCH;
+        return block.asItem();
+    }
+
+    private static boolean visualizeHasItem(net.minecraft.world.SimpleContainer inv, net.minecraft.world.item.Item item) {
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (!s.isEmpty() && s.getItem() == item) return true;
+        }
+        return false;
     }
 
     private static FakePlayerEntity findFakePlayer(ServerLevel level) {

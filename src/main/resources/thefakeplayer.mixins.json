@@ -2,11 +2,12 @@
   "required": true,
   "minVersion": "0.8",
   "package": "org.furranystudio.thefakeplayer.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_21",
   "refmap": "thefakeplayer.refmap.json",
   "mixins": [
   ],
   "client": [
+    "MixinDebugRenderer"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -66,6 +66,9 @@
   "thefakeplayer.chat.smelting.0": "smelting stuff",
   "thefakeplayer.chat.smelting.1": "need more ingots",
 
+  "thefakeplayer.chat.build.done.0": "base is ready",
+  "thefakeplayer.chat.build.done.1": "finally done building",
+
   "thefakeplayer.command.not_found": "No FakePlayer found.",
   "thefakeplayer.command.removed": "FakePlayer removed.",
   "thefakeplayer.command.healed": "FakePlayer healed to %s HP.",

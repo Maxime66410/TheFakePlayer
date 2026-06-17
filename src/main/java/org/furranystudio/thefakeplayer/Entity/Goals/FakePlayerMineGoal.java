@@ -15,6 +15,7 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.furranystudio.thefakeplayer.Entity.Build.BaseRecord;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.EnumSet;
@@ -33,6 +34,8 @@ public class FakePlayerMineGoal extends Goal {
     private static final int COOLDOWN_MINED = 200;
     private static final int COOLDOWN_NONE = 300;
     private static final float MAX_HARDNESS = 30.0f; // ancient debris = 30.0, obsidian = 50.0 (exclu)
+    // Protect a 12-block radius around each known base from mining
+    private static final double BASE_PROTECT_SQ = 144.0;
 
     private static final Set<Block> STONE_BLOCKS = Set.of(
         Blocks.STONE, Blocks.COBBLESTONE, Blocks.GRANITE, Blocks.DIORITE, Blocks.ANDESITE,
@@ -209,6 +212,7 @@ public class FakePlayerMineGoal extends Goal {
 
                     if (!isTargetable(state, pos)) continue;
                     if (!isExposed(pos)) continue;
+                    if (isNearKnownBase(pos)) continue; // never mine blocks inside a known base
 
                     boolean isLog = state.is(BlockTags.LOGS);
                     boolean isPickaxeBlock = isPickaxeBlock(state);
@@ -330,5 +334,12 @@ public class FakePlayerMineGoal extends Goal {
 
     private boolean isPreciousOre(BlockState state) {
         return PRECIOUS_ORE_BLOCKS.contains(state.getBlock());
+    }
+
+    private boolean isNearKnownBase(BlockPos pos) {
+        for (BaseRecord base : entity.getKnownBases()) {
+            if (base.getCenter().distSqr(pos) <= BASE_PROTECT_SQ) return true;
+        }
+        return false;
     }
 }

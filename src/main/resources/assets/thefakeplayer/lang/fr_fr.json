@@ -66,6 +66,9 @@
   "thefakeplayer.chat.smelting.0": "je fonds des trucs",
   "thefakeplayer.chat.smelting.1": "besoin de plus de lingots",
 
+  "thefakeplayer.chat.build.done.0": "la base est prête",
+  "thefakeplayer.chat.build.done.1": "enfin terminé de construire",
+
   "thefakeplayer.command.not_found": "Aucun FakePlayer trouvé.",
   "thefakeplayer.command.removed": "FakePlayer retiré.",
   "thefakeplayer.command.healed": "FakePlayer soigné à %s PV.",

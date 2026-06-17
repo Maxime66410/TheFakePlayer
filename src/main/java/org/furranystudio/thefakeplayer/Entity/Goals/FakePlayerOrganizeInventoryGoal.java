@@ -8,6 +8,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import org.furranystudio.thefakeplayer.Entity.Build.HardcodedShelterBuilder;
 import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 
 import java.util.EnumSet;
@@ -129,11 +130,14 @@ public class FakePlayerOrganizeInventoryGoal extends Goal {
     private void dropJunk() {
         if (!isInventoryAlmostFull()) return;
         if (!(entity.level() instanceof ServerLevel serverLevel)) return;
+        boolean buildingActive = entity.getActiveTask() != null && !entity.getActiveTask().isAbandoned();
         SimpleContainer inv = entity.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack stack = inv.getItem(i);
-            if (stack.isEmpty()) return; // Free slot found, no need to drop
+            if (stack.isEmpty()) return; // free slot found, no need to drop
             if (isJunk(stack) && stack.getCount() > JUNK_DROP_THRESHOLD) {
+                // Keep build materials while a construction is in progress
+                if (buildingActive && HardcodedShelterBuilder.isBuildMaterial(stack.getItem())) continue;
                 int drop = stack.getCount() - JUNK_DROP_THRESHOLD;
                 serverLevel.addFreshEntity(new ItemEntity(serverLevel,
                         entity.getX(), entity.getY(), entity.getZ(),
