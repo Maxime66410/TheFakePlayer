@@ -106,6 +106,24 @@ public class FakePlayerCraftGoal extends Goal {
         new CraftRecipe(new ItemStack(IRON_AXE, 1), 3, 3,
             new Item[][]{ one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT), S, null, null, S, null }),
 
+        // 3x3 — diamond tools
+        new CraftRecipe(new ItemStack(DIAMOND_PICKAXE, 1), 3, 3,
+            new Item[][]{ one(DIAMOND), one(DIAMOND), one(DIAMOND), null, S, null, null, S, null }),
+        new CraftRecipe(new ItemStack(DIAMOND_SWORD, 1), 3, 3,
+            new Item[][]{ null, one(DIAMOND), null, null, one(DIAMOND), null, null, S, null }),
+        new CraftRecipe(new ItemStack(DIAMOND_AXE, 1), 3, 3,
+            new Item[][]{ one(DIAMOND), one(DIAMOND), null, one(DIAMOND), S, null, null, S, null }),
+
+        // 3x3 — diamond armor (chestplate > leggings > helmet > boots)
+        new CraftRecipe(new ItemStack(DIAMOND_CHESTPLATE, 1), 3, 3,
+            new Item[][]{ one(DIAMOND), null, one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND) }),
+        new CraftRecipe(new ItemStack(DIAMOND_LEGGINGS, 1), 3, 3,
+            new Item[][]{ one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND), null, one(DIAMOND), one(DIAMOND), null, one(DIAMOND) }),
+        new CraftRecipe(new ItemStack(DIAMOND_HELMET, 1), 3, 3,
+            new Item[][]{ one(DIAMOND), one(DIAMOND), one(DIAMOND), one(DIAMOND), null, one(DIAMOND), null, null, null }),
+        new CraftRecipe(new ItemStack(DIAMOND_BOOTS, 1), 3, 3,
+            new Item[][]{ null, null, null, one(DIAMOND), null, one(DIAMOND), one(DIAMOND), null, one(DIAMOND) }),
+
         // 3x3 — iron armor (chestplate > leggings > helmet > boots)
         new CraftRecipe(new ItemStack(IRON_CHESTPLATE, 1), 3, 3,
             new Item[][]{ one(IRON_INGOT), null, one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT) }),
