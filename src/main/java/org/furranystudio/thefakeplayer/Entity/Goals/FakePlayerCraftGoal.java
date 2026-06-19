@@ -106,6 +106,12 @@ public class FakePlayerCraftGoal extends Goal {
         new CraftRecipe(new ItemStack(IRON_AXE, 1), 3, 3,
             new Item[][]{ one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT), S, null, null, S, null }),
 
+        // 3x3 — netherite ingot (4 scrap + 4 gold)
+        new CraftRecipe(new ItemStack(NETHERITE_INGOT, 1), 3, 3,
+            new Item[][]{ one(NETHERITE_SCRAP), one(NETHERITE_SCRAP), one(NETHERITE_SCRAP),
+                          one(NETHERITE_SCRAP), one(GOLD_INGOT),      one(GOLD_INGOT),
+                          one(GOLD_INGOT),      one(GOLD_INGOT),      null }),
+
         // 3x3 — diamond tools
         new CraftRecipe(new ItemStack(DIAMOND_PICKAXE, 1), 3, 3,
             new Item[][]{ one(DIAMOND), one(DIAMOND), one(DIAMOND), null, S, null, null, S, null }),
@@ -325,6 +331,7 @@ public class FakePlayerCraftGoal extends Goal {
 
     private boolean shouldCraft(CraftRecipe recipe) {
         Item result = recipe.result().getItem();
+        if (result == NETHERITE_INGOT)    return true;
         if (result == STICK)              return countItem(STICK) < 8;
         if (result == TORCH)              return countItem(TORCH) < 16;
         if (result == CHEST)              return countItem(CHEST) < 1;
