@@ -2,7 +2,6 @@ package org.furranystudio.thefakeplayer.Entity.Goals;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -48,13 +47,18 @@ public class FakePlayerCraftGoal extends Goal {
     private static final Item[] ANY_COBBLE = {
         COBBLESTONE, COBBLED_DEEPSLATE, ANDESITE, DIORITE, GRANITE
     };
-    private static final Item[] S = { STICK };
+    private static final Item[] S        = { STICK };
+    private static final Item[] ANY_COAL = { COAL, CHARCOAL };
 
     private static Item[] one(Item item) { return new Item[]{ item }; }
 
-    private static final Item[] PICKAXE_TIERS = { WOODEN_PICKAXE, STONE_PICKAXE, IRON_PICKAXE, DIAMOND_PICKAXE, NETHERITE_PICKAXE };
-    private static final Item[] SWORD_TIERS   = { WOODEN_SWORD,   STONE_SWORD,   IRON_SWORD,   DIAMOND_SWORD,   NETHERITE_SWORD   };
-    private static final Item[] AXE_TIERS     = { WOODEN_AXE,     STONE_AXE,     IRON_AXE,     DIAMOND_AXE,     NETHERITE_AXE     };
+    private static final Item[] PICKAXE_TIERS    = { WOODEN_PICKAXE,    STONE_PICKAXE,    IRON_PICKAXE,    DIAMOND_PICKAXE,    NETHERITE_PICKAXE    };
+    private static final Item[] SWORD_TIERS      = { WOODEN_SWORD,      STONE_SWORD,      IRON_SWORD,      DIAMOND_SWORD,      NETHERITE_SWORD      };
+    private static final Item[] AXE_TIERS        = { WOODEN_AXE,        STONE_AXE,        IRON_AXE,        DIAMOND_AXE,        NETHERITE_AXE        };
+    private static final Item[] HELMET_TIERS     = { LEATHER_HELMET,     CHAINMAIL_HELMET,     IRON_HELMET,     DIAMOND_HELMET,     NETHERITE_HELMET     };
+    private static final Item[] CHESTPLATE_TIERS = { LEATHER_CHESTPLATE, CHAINMAIL_CHESTPLATE, IRON_CHESTPLATE, DIAMOND_CHESTPLATE, NETHERITE_CHESTPLATE };
+    private static final Item[] LEGGINGS_TIERS   = { LEATHER_LEGGINGS,   CHAINMAIL_LEGGINGS,   IRON_LEGGINGS,   DIAMOND_LEGGINGS,   NETHERITE_LEGGINGS   };
+    private static final Item[] BOOTS_TIERS      = { LEATHER_BOOTS,      CHAINMAIL_BOOTS,      IRON_BOOTS,      DIAMOND_BOOTS,      NETHERITE_BOOTS      };
 
     // Log → Plank mapping (any wood type)
     private static final Item[] LOGS = {
@@ -91,6 +95,8 @@ public class FakePlayerCraftGoal extends Goal {
             new Item[][]{ ANY_PLANK, ANY_PLANK }),
         new CraftRecipe(new ItemStack(CRAFTING_TABLE, 1), 2, 2,
             new Item[][]{ ANY_PLANK, ANY_PLANK, ANY_PLANK, ANY_PLANK }),
+        new CraftRecipe(new ItemStack(TORCH, 4), 1, 2,
+            new Item[][]{ ANY_COAL, S }),
 
         // 3x3 — iron tools
         new CraftRecipe(new ItemStack(IRON_PICKAXE, 1), 3, 3,
@@ -100,6 +106,16 @@ public class FakePlayerCraftGoal extends Goal {
         new CraftRecipe(new ItemStack(IRON_AXE, 1), 3, 3,
             new Item[][]{ one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT), S, null, null, S, null }),
 
+        // 3x3 — iron armor (chestplate > leggings > helmet > boots)
+        new CraftRecipe(new ItemStack(IRON_CHESTPLATE, 1), 3, 3,
+            new Item[][]{ one(IRON_INGOT), null, one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT) }),
+        new CraftRecipe(new ItemStack(IRON_LEGGINGS, 1), 3, 3,
+            new Item[][]{ one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT) }),
+        new CraftRecipe(new ItemStack(IRON_HELMET, 1), 3, 3,
+            new Item[][]{ one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT), null, null, null }),
+        new CraftRecipe(new ItemStack(IRON_BOOTS, 1), 3, 3,
+            new Item[][]{ null, null, null, one(IRON_INGOT), null, one(IRON_INGOT), one(IRON_INGOT), null, one(IRON_INGOT) }),
+
         // 3x3 — stone tools
         new CraftRecipe(new ItemStack(STONE_PICKAXE, 1), 3, 3,
             new Item[][]{ ANY_COBBLE, ANY_COBBLE, ANY_COBBLE, null, S, null, null, S, null }),
@@ -108,13 +124,35 @@ public class FakePlayerCraftGoal extends Goal {
         new CraftRecipe(new ItemStack(STONE_AXE, 1), 3, 3,
             new Item[][]{ ANY_COBBLE, ANY_COBBLE, null, ANY_COBBLE, S, null, null, S, null }),
 
+        // 3x3 — leather armor (fallback)
+        new CraftRecipe(new ItemStack(LEATHER_CHESTPLATE, 1), 3, 3,
+            new Item[][]{ one(LEATHER), null, one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER) }),
+        new CraftRecipe(new ItemStack(LEATHER_LEGGINGS, 1), 3, 3,
+            new Item[][]{ one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER), null, one(LEATHER), one(LEATHER), null, one(LEATHER) }),
+        new CraftRecipe(new ItemStack(LEATHER_HELMET, 1), 3, 3,
+            new Item[][]{ one(LEATHER), one(LEATHER), one(LEATHER), one(LEATHER), null, one(LEATHER), null, null, null }),
+        new CraftRecipe(new ItemStack(LEATHER_BOOTS, 1), 3, 3,
+            new Item[][]{ null, null, null, one(LEATHER), null, one(LEATHER), one(LEATHER), null, one(LEATHER) }),
+
         // 3x3 — wooden tools (last resort)
         new CraftRecipe(new ItemStack(WOODEN_PICKAXE, 1), 3, 3,
             new Item[][]{ ANY_PLANK, ANY_PLANK, ANY_PLANK, null, S, null, null, S, null }),
         new CraftRecipe(new ItemStack(WOODEN_SWORD, 1), 3, 3,
             new Item[][]{ null, ANY_PLANK, null, null, ANY_PLANK, null, null, S, null }),
         new CraftRecipe(new ItemStack(WOODEN_AXE, 1), 3, 3,
-            new Item[][]{ ANY_PLANK, ANY_PLANK, null, ANY_PLANK, S, null, null, S, null })
+            new Item[][]{ ANY_PLANK, ANY_PLANK, null, ANY_PLANK, S, null, null, S, null }),
+
+        // 3x3 — construction blocks
+        new CraftRecipe(new ItemStack(CHEST, 1), 3, 3,
+            new Item[][]{ ANY_PLANK, ANY_PLANK, ANY_PLANK, ANY_PLANK, null, ANY_PLANK, ANY_PLANK, ANY_PLANK, ANY_PLANK }),
+        new CraftRecipe(new ItemStack(COBBLESTONE_SLAB, 6), 3, 1,
+            new Item[][]{ ANY_COBBLE, ANY_COBBLE, ANY_COBBLE }),
+        new CraftRecipe(new ItemStack(COBBLESTONE_STAIRS, 4), 3, 3,
+            new Item[][]{ ANY_COBBLE, null, null, ANY_COBBLE, ANY_COBBLE, null, ANY_COBBLE, ANY_COBBLE, ANY_COBBLE }),
+        new CraftRecipe(new ItemStack(OAK_SLAB, 6), 3, 1,
+            new Item[][]{ ANY_PLANK, ANY_PLANK, ANY_PLANK }),
+        new CraftRecipe(new ItemStack(OAK_STAIRS, 4), 3, 3,
+            new Item[][]{ ANY_PLANK, null, null, ANY_PLANK, ANY_PLANK, null, ANY_PLANK, ANY_PLANK, ANY_PLANK })
     );
 
     // ── Goal lifecycle ────────────────────────────────────────────────────────
@@ -232,7 +270,6 @@ public class FakePlayerCraftGoal extends Goal {
         entity.level().setBlock(spot, Blocks.CRAFTING_TABLE.defaultBlockState(), Block.UPDATE_ALL);
         consumeItem(CRAFTING_TABLE, 1);
         playPlaceSound(spot, Blocks.CRAFTING_TABLE.defaultBlockState());
-        entity.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(CRAFTING_TABLE));
         entity.triggerSwingAnim();
         done = true;
     }
@@ -270,10 +307,20 @@ public class FakePlayerCraftGoal extends Goal {
 
     private boolean shouldCraft(CraftRecipe recipe) {
         Item result = recipe.result().getItem();
-        if (result == STICK) return countItem(STICK) < 8;
-        if (containedIn(result, PICKAXE_TIERS)) return !hasBetterOrEqual(result, PICKAXE_TIERS);
-        if (containedIn(result, SWORD_TIERS))   return !hasBetterOrEqual(result, SWORD_TIERS);
-        if (containedIn(result, AXE_TIERS))     return !hasBetterOrEqual(result, AXE_TIERS);
+        if (result == STICK)              return countItem(STICK) < 8;
+        if (result == TORCH)              return countItem(TORCH) < 16;
+        if (result == CHEST)              return countItem(CHEST) < 1;
+        if (result == COBBLESTONE_SLAB)   return countItem(COBBLESTONE_SLAB) < 16;
+        if (result == COBBLESTONE_STAIRS) return countItem(COBBLESTONE_STAIRS) < 8;
+        if (result == OAK_SLAB)           return countItem(OAK_SLAB) < 16 && countAllPlanks() > 16;
+        if (result == OAK_STAIRS)         return countItem(OAK_STAIRS) < 8  && countAllPlanks() > 16;
+        if (containedIn(result, PICKAXE_TIERS))    return !hasBetterOrEqual(result, PICKAXE_TIERS);
+        if (containedIn(result, SWORD_TIERS))      return !hasBetterOrEqual(result, SWORD_TIERS);
+        if (containedIn(result, AXE_TIERS))        return !hasBetterOrEqual(result, AXE_TIERS);
+        if (containedIn(result, HELMET_TIERS))     return !hasBetterOrEqual(result, HELMET_TIERS);
+        if (containedIn(result, CHESTPLATE_TIERS)) return !hasBetterOrEqual(result, CHESTPLATE_TIERS);
+        if (containedIn(result, LEGGINGS_TIERS))   return !hasBetterOrEqual(result, LEGGINGS_TIERS);
+        if (containedIn(result, BOOTS_TIERS))      return !hasBetterOrEqual(result, BOOTS_TIERS);
         return !hasItem(result);
     }
 
@@ -288,9 +335,25 @@ public class FakePlayerCraftGoal extends Goal {
         for (Map.Entry<Item, Integer> e : needed.entrySet()) {
             consumeItem(e.getKey(), e.getValue());
         }
-        addToInventory(recipe.result().copy());
-        entity.setItemInHand(InteractionHand.MAIN_HAND, recipe.result().copy());
+        ItemStack result = recipe.result().copy();
+        // Armor goes directly to the equipment slot, everything else to inventory
+        if (!tryAutoEquipArmor(result)) {
+            addToInventory(result);
+        }
         entity.triggerSwingAnim();
+    }
+
+    // Returns true if the item was equipped to an armor slot
+    private boolean tryAutoEquipArmor(ItemStack stack) {
+        Item item = stack.getItem();
+        net.minecraft.world.entity.EquipmentSlot slot = null;
+        if (containedIn(item, HELMET_TIERS))     slot = net.minecraft.world.entity.EquipmentSlot.HEAD;
+        if (containedIn(item, CHESTPLATE_TIERS)) slot = net.minecraft.world.entity.EquipmentSlot.CHEST;
+        if (containedIn(item, LEGGINGS_TIERS))   slot = net.minecraft.world.entity.EquipmentSlot.LEGS;
+        if (containedIn(item, BOOTS_TIERS))      slot = net.minecraft.world.entity.EquipmentSlot.FEET;
+        if (slot == null) return false;
+        entity.setItemSlot(slot, stack.copy());
+        return true;
     }
 
     // Returns null if recipe cannot be satisfied; otherwise returns item → count map
@@ -319,7 +382,6 @@ public class FakePlayerCraftGoal extends Goal {
             if (hasItem(LOGS[i])) {
                 consumeItem(LOGS[i], 1);
                 addToInventory(new ItemStack(PLANKS_FOR_LOG[i], 4));
-                entity.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(PLANKS_FOR_LOG[i]));
                 entity.triggerSwingAnim();
                 return;
             }
@@ -388,7 +450,11 @@ public class FakePlayerCraftGoal extends Goal {
     }
 
     private boolean hasItem(Item item) {
-        return countItem(item) > 0;
+        if (countItem(item) > 0) return true;
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            if (entity.getItemBySlot(slot).getItem() == item) return true;
+        }
+        return false;
     }
 
     private int countItem(Item item) {
