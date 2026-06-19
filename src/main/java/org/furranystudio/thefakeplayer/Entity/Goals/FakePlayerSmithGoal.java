@@ -157,6 +157,8 @@ public class FakePlayerSmithGoal extends Goal {
 
     private boolean hasItemAnywhere(Item item) {
         if (hasItem(item)) return true;
+        if (entity.getMainHandItem().getItem() == item) return true;
+        if (entity.getOffhandItem().getItem() == item) return true;
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             if (entity.getItemBySlot(slot).getItem() == item) return true;
         }

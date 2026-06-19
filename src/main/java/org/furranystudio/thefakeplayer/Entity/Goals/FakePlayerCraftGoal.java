@@ -476,6 +476,8 @@ public class FakePlayerCraftGoal extends Goal {
 
     private boolean hasItem(Item item) {
         if (countItem(item) > 0) return true;
+        if (entity.getMainHandItem().getItem() == item) return true;
+        if (entity.getOffhandItem().getItem() == item) return true;
         for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
             if (entity.getItemBySlot(slot).getItem() == item) return true;
         }
