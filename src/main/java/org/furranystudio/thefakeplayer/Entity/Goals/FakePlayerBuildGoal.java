@@ -25,7 +25,9 @@ import org.furranystudio.thefakeplayer.Entity.FakePlayerEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FakePlayerBuildGoal extends Goal {
 
@@ -41,8 +43,8 @@ public class FakePlayerBuildGoal extends Goal {
     private int navStuckTicks = 0;
     @Nullable private BlockPos lastBlockPos = null;
 
-    // Position of the bed foot placed during this build session
-    @Nullable private BlockPos placedBedPos = null;
+    // Scaffold: cooldown between scaffold block placements
+    private int scaffoldCooldown = 0;
 
     // Short reach: entity must walk close to each block before placing
     private static final double PLACE_REACH_SQ = 9.0; // 3 blocks
@@ -88,7 +90,7 @@ public class FakePlayerBuildGoal extends Goal {
         placeCooldown = 0;
         navStuckTicks = 0;
         lastBlockPos = null;
-        placedBedPos = null;
+        scaffoldCooldown = 0;
         // Resume existing task rather than selecting a new location
         ConstructionTask existing = entity.getActiveTask();
         if (existing != null && !existing.isAbandoned() && blueprint != null) {
@@ -124,6 +126,8 @@ public class FakePlayerBuildGoal extends Goal {
             StructureRegistry.get().registerRuntime(selected);
         }
 
+        if (!hasRequiredMaterials(selected)) { state = BuildState.ABANDONED; return; }
+
         BlockPos origin = findBuildLocation(selected.getWidth(), selected.getDepth());
         if (origin == null) { state = BuildState.ABANDONED; return; }
 
@@ -157,6 +161,7 @@ public class FakePlayerBuildGoal extends Goal {
 
     private void tickBuild() {
         if (placeCooldown > 0) { placeCooldown--; return; }
+        if (scaffoldCooldown > 0) scaffoldCooldown--;
 
         ConstructionTask task = entity.getActiveTask();
         if (task == null || blueprint == null) { state = BuildState.ABANDONED; return; }
@@ -188,6 +193,16 @@ public class FakePlayerBuildGoal extends Goal {
             if (isDoorUpperHalf(entry.state()) || isBedHeadHalf(entry.state())) {
                 task.markPlaced(i);
                 continue;
+            }
+
+            // Scaffold up: horizontally close but too high to reach — jump + place block under self
+            if (scaffoldCooldown == 0) {
+                BlockPos feet = entity.blockPosition();
+                int hdx = worldPos.getX() - feet.getX();
+                int hdz = worldPos.getZ() - feet.getZ();
+                if (hdx * hdx + hdz * hdz <= 4 && worldPos.getY() > feet.getY() + 1) {
+                    if (placeScaffoldUnderSelf()) return;
+                }
             }
 
             if (entity.blockPosition().distSqr(worldPos) > PLACE_REACH_SQ) continue;
@@ -282,7 +297,6 @@ public class FakePlayerBuildGoal extends Goal {
                 entity.level().setBlock(headPos, headState, Block.UPDATE_ALL);
                 consumeItem(bedItem);
                 playPlaceSound(worldPos, footState);
-                placedBedPos = worldPos; // record for BaseRecord
                 task.markPlaced(i);
                 placeCooldown = placeCooldownTicks();
                 entity.triggerSwingAnim();
@@ -301,12 +315,20 @@ public class FakePlayerBuildGoal extends Goal {
             return;
         }
 
-        // 2. Navigate to the nearest unplaced block
+        // 2. Navigate to the nearest unplaced block we actually have items for
         BlockPos nearest = null;
         double bestDist = Double.MAX_VALUE;
         for (int i = 0; i < blocks.size(); i++) {
             if (task.getPlacedIndices().contains(i)) continue;
-            BlockPos worldPos = origin.offset(blocks.get(i).offset());
+            StructureBlueprint.PlacementEntry entry = blocks.get(i);
+            if (isDoorUpperHalf(entry.state()) || isBedHeadHalf(entry.state())) continue;
+            if (isBedFootHalf(entry.state())) {
+                if (findAnyBedItem() == null) continue;
+            } else {
+                Item needed = blockToItem(entry.state());
+                if (needed == null || !hasItem(needed)) continue;
+            }
+            BlockPos worldPos = origin.offset(entry.offset());
             double d = entity.blockPosition().distSqr(worldPos);
             if (d < bestDist) { bestDist = d; nearest = worldPos; }
         }
@@ -337,7 +359,17 @@ public class FakePlayerBuildGoal extends Goal {
                 blueprint.getWidth() / 2, 1, blueprint.getDepth() / 2);
             BaseRecord base = new BaseRecord(center);
             base.setComplete(true);
-            if (placedBedPos != null) base.setBedPos(placedBedPos);
+            for (StructureBlueprint.PlacementEntry entry : blueprint.getBlocks()) {
+                if (isBedFootHalf(entry.state())) {
+                    BlockPos worldPos = task.getOrigin().offset(entry.offset());
+                    BlockState actual = entity.level().getBlockState(worldPos);
+                    if (actual.hasProperty(BlockStateProperties.BED_PART)
+                            && actual.getValue(BlockStateProperties.BED_PART) == BedPart.FOOT) {
+                        base.setBedPos(worldPos);
+                        break;
+                    }
+                }
+            }
             entity.addBase(base);
         }
         entity.setActiveTask(null);
@@ -350,6 +382,76 @@ public class FakePlayerBuildGoal extends Goal {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private boolean placeScaffoldUnderSelf() {
+        Item scaffoldItem = findScaffoldItem();
+        if (scaffoldItem == null) return false;
+        BlockPos feetPos = entity.blockPosition();
+        if (isBuildPosition(feetPos)) return false;
+        if (!entity.level().getBlockState(feetPos).isAir()) return false;
+        Block block = ((BlockItem) scaffoldItem).getBlock();
+        entity.getJumpControl().jump();
+        entity.level().setBlock(feetPos, block.defaultBlockState(), Block.UPDATE_ALL);
+        consumeItem(scaffoldItem);
+        entity.triggerSwingAnim();
+        scaffoldCooldown = 15;
+        return true;
+    }
+
+    @Nullable
+    private Item findScaffoldItem() {
+        for (Item candidate : new Item[]{ Items.SCAFFOLDING, Items.DIRT }) {
+            if (hasItem(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private boolean isBuildPosition(BlockPos pos) {
+        ConstructionTask task = entity.getActiveTask();
+        if (task == null || blueprint == null) return false;
+        for (StructureBlueprint.PlacementEntry entry : blueprint.getBlocks()) {
+            if (task.getOrigin().offset(entry.offset()).equals(pos)) return true;
+        }
+        return false;
+    }
+
+    private boolean hasRequiredMaterials(StructureBlueprint bp) {
+        Map<Item, Integer> needed = new HashMap<>();
+        int bedsNeeded = 0;
+        for (StructureBlueprint.PlacementEntry entry : bp.getBlocks()) {
+            BlockState state = entry.state();
+            if (isDoorUpperHalf(state) || isBedHeadHalf(state)) continue;
+            if (isBedFootHalf(state)) { bedsNeeded++; continue; }
+            Item item = blockToItem(state);
+            if (item == null || item == Items.AIR) continue;
+            needed.merge(item, 1, Integer::sum);
+        }
+        for (Map.Entry<Item, Integer> e : needed.entrySet()) {
+            if (countItem(e.getKey()) < e.getValue()) return false;
+        }
+        return bedsNeeded == 0 || countAnyBed() >= bedsNeeded;
+    }
+
+    private int countItem(Item item) {
+        int total = 0;
+        for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+            ItemStack stack = entity.getInventory().getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == item) total += stack.getCount();
+        }
+        return total;
+    }
+
+    private int countAnyBed() {
+        int total = 0;
+        for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+            ItemStack stack = entity.getInventory().getItem(i);
+            if (!stack.isEmpty() && stack.getItem() instanceof BlockItem bi
+                    && bi.getBlock().defaultBlockState().hasProperty(BlockStateProperties.BED_PART)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
 
     private void equipItemForPlacement(ItemStack stack) {
         if (!stack.isEmpty()) {

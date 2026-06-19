@@ -91,6 +91,7 @@ public class FakePlayerBridgeGoal extends Goal {
         Block bridge = findBridgeBlock();
         if (bridge == null) return;
         BlockState state = bridge.defaultBlockState();
+        equipBlock(bridge);
         entity.level().setBlock(pos, state, Block.UPDATE_ALL);
         consumeBlock(bridge);
         blocksPlaced++;
@@ -143,6 +144,17 @@ public class FakePlayerBridgeGoal extends Goal {
             dz = (int) Math.round(motion.z / len);
         }
         return new int[]{dx, dz};
+    }
+
+    private void equipBlock(Block block) {
+        Item item = block.asItem();
+        for (int i = 0; i < entity.getInventory().getContainerSize(); i++) {
+            ItemStack stack = entity.getInventory().getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == item) {
+                entity.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack.copyWithCount(1));
+                return;
+            }
+        }
     }
 
     private boolean hasBridgeBlock() {
