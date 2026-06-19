@@ -51,6 +51,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerChestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCraftGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSmithGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
@@ -455,6 +456,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(8, new FakePlayerAnvilRepairGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerSmeltGoal(this));
+        this.goalSelector.addGoal(7, new FakePlayerSmithGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
