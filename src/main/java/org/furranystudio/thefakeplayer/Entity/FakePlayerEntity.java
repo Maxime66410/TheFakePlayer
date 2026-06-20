@@ -52,6 +52,7 @@ import net.minecraft.world.entity.ai.goal.*;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerChestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerCraftGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerSmithGoal;
+import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEnchantGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerEatGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerHarvestGoal;
 import org.furranystudio.thefakeplayer.Entity.Goals.FakePlayerMineGoal;
@@ -129,6 +130,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
     public int shieldCooldown = 0;
     public boolean godMode = false;
     public int suppressTargetingTicks = 0;
+    private int storedXPPoints = 0;
     private int sneakTick = 0;
 
     // Construction state
@@ -457,6 +459,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
         this.goalSelector.addGoal(7, new FakePlayerCraftGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerSmeltGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerSmithGoal(this));
+        this.goalSelector.addGoal(7, new FakePlayerEnchantGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerLongDistanceTravelGoal(this));
         this.goalSelector.addGoal(7, new FakePlayerWanderGoal(this)); // Random roaming — 50 block radius
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F)); // Look at player
@@ -1016,6 +1019,7 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         // Save active construction task
         if (activeTask != null) p_34458_.put("ActiveTask", activeTask.save());
+        p_34458_.putInt("StoredXPPoints", storedXPPoints);
     }
 
     // Read from save data
@@ -1049,6 +1053,36 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
 
         // Load active construction task
         activeTask = p_34446_.contains("ActiveTask") ? ConstructionTask.load(p_34446_.getCompound("ActiveTask")) : null;
+        storedXPPoints = p_34446_.getInt("StoredXPPoints");
+    }
+
+    public int getStoredXPLevel() {
+        int pts = storedXPPoints;
+        int level = 0;
+        while (true) {
+            int needed = xpForLevel(level);
+            if (pts < needed) break;
+            pts -= needed;
+            level++;
+        }
+        return level;
+    }
+
+    public void addXPPoints(int points) {
+        storedXPPoints += Math.max(0, points);
+    }
+
+    public void consumeXPLevels(int levels) {
+        int remaining = Math.max(0, getStoredXPLevel() - levels);
+        int newPoints = 0;
+        for (int l = 0; l < remaining; l++) newPoints += xpForLevel(l);
+        storedXPPoints = newPoints;
+    }
+
+    private static int xpForLevel(int level) {
+        if (level >= 30) return 112 + (level - 30) * 9;
+        if (level >= 15) return 37 + (level - 15) * 5;
+        return 7 + level * 2;
     }
 
     @Override
@@ -1143,6 +1177,27 @@ public class FakePlayerEntity extends PathfinderMob implements NeutralMob, Inven
             if (suppressTargetingTicks > 0) suppressTargetingTicks--;
             if (godMode) this.setHealth(this.getMaxHealth() * 10);
             updateCrouching();
+            // Attract XP orbs (vanilla formula: 8 block range, absorb when overlapping)
+            level().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
+                this.getBoundingBox().inflate(8.0)).forEach(orb -> {
+                    double distSq = orb.distanceToSqr(this);
+                    if (distSq < 1.0) {
+                        storedXPPoints += orb.getValue();
+                        orb.discard();
+                    } else if (distSq < 64.0) { // 8^2
+                        double dist = Math.sqrt(distSq);
+                        double pull = 1.0 - dist / 8.0;
+                        net.minecraft.world.phys.Vec3 vel = orb.getDeltaMovement().add(
+                            (getX() - orb.getX()) / dist * pull * pull * 0.1,
+                            (getEyeY() - orb.getY()) / dist * pull * pull * 0.1,
+                            (getZ() - orb.getZ()) / dist * pull * pull * 0.1
+                        );
+                        // Speed cap to prevent teleporting
+                        double speed = vel.length();
+                        if (speed > 0.1) vel = vel.scale(0.1 / speed);
+                        orb.setDeltaMovement(vel);
+                    }
+                });
         }
     }
 
